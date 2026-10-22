@@ -75,28 +75,63 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3.5">
         
         {/* Brand */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => window.location.reload()}>
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white font-bold font-mono text-sm shadow-sm">
-              GP
+        <div className="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+          <div 
+            className="flex items-center gap-2.5 cursor-pointer group select-none" 
+            onClick={() => window.location.reload()}
+            title="Reload GitPulse Dashboard"
+          >
+            {/* Handcrafted Vector Pulse + Git Logo */}
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-400 p-[1.5px] shadow-[0_0_18px_rgba(56,189,248,0.35)] group-hover:shadow-[0_0_24px_rgba(56,189,248,0.55)] transition-all">
+              <div className="w-full h-full rounded-[10px] bg-[#0c121e] flex items-center justify-center overflow-hidden">
+                <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  {/* Git branch node circles */}
+                  <circle cx="5" cy="12" r="2.2" className="fill-blue-500 stroke-blue-400" strokeWidth="1.5" />
+                  <circle cx="19" cy="6" r="2.2" className="fill-cyan-400 stroke-cyan-300" strokeWidth="1.5" />
+                  <circle cx="19" cy="18" r="2.2" className="fill-emerald-400 stroke-emerald-300" strokeWidth="1.5" />
+                  {/* Pulse waveform connecting git commits */}
+                  <path 
+                    d="M7.2 12h2.8l1.8-6 2.5 12 2-7.5 1.5 1.5h1.2" 
+                    className="stroke-cyan-400" 
+                    strokeWidth="2" 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                  />
+                  {/* Branch arc */}
+                  <path 
+                    d="M16 12c1.2 0 1.8 3.5 1.8 3.8" 
+                    className="stroke-emerald-400/70" 
+                    strokeWidth="1.5" 
+                    strokeLinecap="round" 
+                  />
+                </svg>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white flex items-center gap-1.5">
-                GitPulse
+
+            {/* Editorial Typographic Contrast (Sans + Instrument Serif Italic) */}
+            <div className="flex flex-col leading-none">
+              <h1 className="text-xl font-extrabold tracking-[-0.03em] text-slate-900 dark:text-white flex items-center">
+                Git<span className="font-serif italic font-normal text-[26px] text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 ml-0.5">Pulse</span>
               </h1>
             </div>
           </div>
 
-          {/* Topics Directory Pill */}
+          {/* Topics Directory Pill (Liquid Glass 2.0 with Pulsing Telemetry Dot) */}
           <button
             onClick={onOpenTopicsModal}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-[#21262d] hover:bg-slate-200 dark:hover:bg-[#30363d] text-xs font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-transparent transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/90 dark:bg-white/[0.04] hover:bg-slate-200/90 dark:hover:bg-white/[0.08] text-xs font-mono text-slate-700 dark:text-slate-300 border border-slate-300/80 dark:border-white/10 shadow-sm backdrop-blur-md transition-all group"
             title="Browse all 900+ topics"
           >
-            <Hash className="w-3.5 h-3.5 text-blue-500" />
-            <span>Topics</span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
+            </span>
+            <span className="flex items-center gap-1 font-medium group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
+              <Hash className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" />
+              Topics
+            </span>
             {totalTopicsCount > 0 && (
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+              <span className="text-[11px] font-semibold px-2 py-0.2 rounded-full bg-blue-500/10 dark:bg-cyan-400/15 text-blue-700 dark:text-cyan-300 border border-blue-500/20 dark:border-cyan-400/25">
                 ({totalTopicsCount})
               </span>
             )}
