@@ -20,6 +20,7 @@ class RepositoryBase(BaseModel):
     owner: str
     html_url: str
     description: Optional[str] = None
+    description_en: Optional[str] = None
     language: Optional[str] = None
     topics: List[str] = []
     stars: int

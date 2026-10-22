@@ -16,6 +16,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, Any, List, Optional
 from app.config import DB_PATH
 from app.models.smart_momentum import calculate_smart_momentum
+from app.translator import translate_cjk_sync, contains_cjk
 
 # Fix Windows cert store
 ctx = ssl.create_default_context(cafile=certifi.where())
@@ -243,6 +244,12 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
         d7d = max(d24h * 5, int(stars * (r.get("growth_7d_pct", 2.5) / 100.0)))
         d30d = max(d7d * 3, int(stars * (r.get("growth_30d_pct", 8.0) / 100.0)))
 
+        # Check for CJK and translate to English
+        desc_raw = r.get("description") or ""
+        desc_en = None
+        if contains_cjk(desc_raw):
+            desc_en = translate_cjk_sync(desc_raw, conn=conn)
+
         # Upsert repository
         cursor.execute("SELECT id, stars FROM repositories WHERE full_name = ?;", (full_name,))
         row = cursor.fetchone()
@@ -252,11 +259,12 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
             cursor.execute("""
                 UPDATE repositories SET
                     stars = ?, description = COALESCE(NULLIF(?, ''), description),
+                    description_en = COALESCE(?, description_en),
                     language = COALESCE(NULLIF(?, ''), language),
                     topics = ?, category_id = ?, is_emerging = ?, last_crawled_at = ?
                 WHERE id = ?;
             """, (
-                stars, r["description"], r.get("language"),
+                stars, desc_raw, desc_en, r.get("language"),
                 json.dumps(r["topics"]), cat_id, is_emerging, now_iso,
                 repo_id
             ))
@@ -265,14 +273,14 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
             created_at = (datetime.now(timezone.utc) - timedelta(days=random.randint(30, 700))).isoformat()
             cursor.execute("""
                 INSERT INTO repositories (
-                    full_name, name, owner, html_url, description, language,
+                    full_name, name, owner, html_url, description, description_en, language,
                     topics, stars, forks, open_issues, created_at, pushed_at,
                     category_id, is_emerging, last_crawled_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """, (
                 full_name, r["name"], r["owner"],
                 f"https://github.com/{full_name}",
-                r["description"], r.get("language", "TypeScript"),
+                desc_raw, desc_en, r.get("language", "TypeScript"),
                 json.dumps(r["topics"]), stars, forks, 15,
                 created_at, now_iso, cat_id, is_emerging, now_iso
             ))

@@ -19,6 +19,7 @@ export interface Repository {
   owner: string;
   html_url: string;
   description: string | null;
+  description_en?: string | null;
   language: string | null;
   topics: string[];
   stars: number;

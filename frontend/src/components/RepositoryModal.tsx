@@ -36,6 +36,7 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
 }) => {
   const [detail, setDetail] = useState<RepositoryDetail | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showOriginal, setShowOriginal] = useState(false);
 
   // Close on Escape key & lock body scroll while modal is mounted
   useEffect(() => {
@@ -147,9 +148,15 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
                   </span>
                 )}
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white mt-1 truncate">
+              <a
+                href={repo.html_url || `https://github.com/${repo.full_name}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white hover:text-blue-500 hover:underline transition-colors mt-1 truncate block"
+                title={`Open ${repo.full_name} on GitHub`}
+              >
                 {repo.name}
-              </h2>
+              </a>
             </div>
           </div>
 
@@ -172,8 +179,9 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
             <a
               href={repo.html_url || `https://github.com/${repo.full_name}`}
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-mono font-medium transition-all shadow-sm"
+              title="Open repository on GitHub"
             >
               <span>GitHub</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -189,10 +197,24 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-sm text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
-          {repo.description || "No description provided for this repository."}
-        </p>
+        {/* Description & Native Translation Pill */}
+        <div className="space-y-1.5">
+          <p className="text-sm text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
+            {Boolean(repo.description_en && repo.description_en !== repo.description)
+              ? (showOriginal ? repo.description : repo.description_en)
+              : (repo.description || "No description provided for this repository.")}
+          </p>
+          {Boolean(repo.description_en && repo.description_en !== repo.description) && (
+            <button
+              type="button"
+              onClick={() => setShowOriginal(!showOriginal)}
+              className="inline-flex items-center gap-1 text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline"
+            >
+              <span>🌐 {showOriginal ? "Show English Translation" : "Translated from original CJK text"}</span>
+              <span className="text-slate-400">({showOriginal ? "原文" : "Original"})</span>
+            </button>
+          )}
+        </div>
 
         {/* Telemetry Stat Cards Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -328,7 +350,19 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
                       ★ {(rel?.stars ?? 0).toLocaleString()} • {rel.language || 'Code'}
                     </span>
                   </div>
-                  <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={rel.html_url || `https://github.com/${rel.full_name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                      title="Open on GitHub"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                    <ArrowUpRight className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  </div>
                 </div>
               ))}
             </div>

@@ -229,17 +229,27 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
                             <span className="font-mono text-slate-400 text-xs">
                               {repo.owner} /
                             </span>
-                            <span className="font-bold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors">
+                            <a
+                              href={repo.html_url || `https://github.com/${repo.full_name}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="font-bold text-slate-900 dark:text-white hover:text-blue-500 hover:underline transition-colors"
+                              title={`Open ${repo.full_name} on GitHub`}
+                            >
                               {repo.name}
-                            </span>
+                            </a>
+                            {repo.description_en && (
+                              <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                                🌐 Translated
+                              </span>
+                            )}
                           </div>
-                          {repo.description && (
-                            <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-1 mt-0.5 max-w-lg font-sans">
-                              {repo.description}
-                            </p>
-                          )}
+                          <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-1 mt-0.5 max-w-lg font-sans">
+                            {repo.description_en || repo.description || "No description provided."}
+                          </p>
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                            {repo.topics.slice(0, 3).map((t) => (
+                            {repo.topics.slice(0, 4).map((t) => (
                               <span 
                                 key={t}
                                 onClick={(e) => {
@@ -575,8 +585,14 @@ const CompactCard: React.FC<CompactCardProps> = ({
   onToggleWatchlist,
   onSelectTopic
 }) => {
+  const [showOriginal, setShowOriginal] = useState(false);
   const initial = (repo.name[0] || 'R').toUpperCase();
   const avatarClass = getAvatarColor(repo.name);
+
+  const hasTranslation = Boolean(repo.description_en && repo.description_en !== repo.description);
+  const displayDescription = (hasTranslation && !showOriginal) 
+    ? repo.description_en 
+    : (repo.description || "No description provided.");
 
   return (
     <div
@@ -592,9 +608,16 @@ const CompactCard: React.FC<CompactCardProps> = ({
               <span className="text-[11px] font-mono text-slate-400 block truncate">
                 {repo.owner}
               </span>
-              <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-500 transition-colors truncate">
+              <a
+                href={repo.html_url || `https://github.com/${repo.full_name}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-xs font-bold text-slate-900 dark:text-white hover:text-blue-500 hover:underline transition-colors truncate block"
+                title={`Open ${repo.full_name} on GitHub`}
+              >
                 {repo.name}
-              </h4>
+              </a>
             </div>
           </div>
 
@@ -616,16 +639,31 @@ const CompactCard: React.FC<CompactCardProps> = ({
           </div>
         </div>
 
-        {/* Description */}
-        <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed mb-2.5 font-sans">
-          {repo.description || "No description provided."}
-        </p>
+        {/* Description & Native Translation Pill */}
+        <div className="mb-2.5">
+          <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 leading-relaxed font-sans">
+            {displayDescription}
+          </p>
+          {hasTranslation && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowOriginal(!showOriginal);
+              }}
+              className="mt-1 inline-flex items-center gap-1 text-[10px] font-mono text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+            >
+              <span>🌐 {showOriginal ? "Show English" : "Translated from original"}</span>
+              <span className="text-slate-400 text-[9px]">({showOriginal ? "原文" : "Original"})</span>
+            </button>
+          )}
+        </div>
       </div>
 
       <div>
         {/* Topic Chips */}
         <div className="flex flex-wrap gap-1 mb-2.5">
-          {repo.topics.slice(0, 3).map((t) => (
+          {repo.topics.slice(0, 4).map((t) => (
             <button
               key={t}
               onClick={(e) => {
@@ -652,14 +690,14 @@ const CompactCard: React.FC<CompactCardProps> = ({
           </div>
 
           <a
-            href={repo.html_url}
+            href={repo.html_url || `https://github.com/${repo.full_name}`}
             target="_blank"
-            rel="noreferrer"
+            rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="p-1 hover:text-blue-500 transition-colors"
+            className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
             title="Open on GitHub"
           >
-            <ExternalLink className="w-3 h-3" />
+            <ExternalLink className="w-3.5 h-3.5" />
           </a>
         </div>
       </div>

@@ -8,6 +8,8 @@ from app.database import get_db_connection
 from app.models.schemas import RepositoryBase, RepositoryDetail, SparklinePoint, MomentumFactors
 from app.models.smart_momentum import calculate_smart_momentum
 from app.github_client import github_client
+from app.search_engine import parse_search_intent, score_repository_relevance
+from app.translator import translate_cjk_sync
 
 router = APIRouter(prefix="/api/repositories", tags=["Repositories"])
 
@@ -74,6 +76,12 @@ def row_to_repo_dict(row, snapshots=None, is_saved=False) -> dict:
         composite_momentum=factors_raw["composite_momentum"]
     )
 
+    desc_en = None
+    try:
+        desc_en = row["description_en"]
+    except Exception:
+        pass
+
     return {
         "id": row["id"],
         "full_name": row["full_name"],
@@ -81,6 +89,7 @@ def row_to_repo_dict(row, snapshots=None, is_saved=False) -> dict:
         "owner": row["owner"],
         "html_url": row["html_url"],
         "description": row["description"],
+        "description_en": desc_en,
         "language": row["language"],
         "topics": topics,
         "stars": row["stars"],
@@ -173,45 +182,41 @@ async def list_repositories(
         query += " AND is_emerging = ?"
         params.append(1 if is_emerging else 0)
 
-    clean_search = None
-    search_terms = []
-    if search:
-        clean_search = search.strip()
-        clean_search = re.sub(r"^https?://github\.com/", "", clean_search, flags=re.IGNORECASE)
-        clean_search = re.sub(r"^github\.com/", "", clean_search, flags=re.IGNORECASE).strip("/")
+    intent = None
+    if search and search.strip():
+        intent = parse_search_intent(search)
         
-        search_lower = clean_search.lower()
-        search_terms = [search_lower]
-        if search_lower in SEMANTIC_EXPANSIONS:
-            search_terms.extend(SEMANTIC_EXPANSIONS[search_lower])
-        
-        # Deduplicate terms
-        unique_terms = []
-        for t in search_terms:
-            if t not in unique_terms:
-                unique_terms.append(t)
-        search_terms = unique_terms
+        # Candidate SQL filtering: match meaningful keywords or concept terms
+        candidate_terms = intent["meaningful_keywords"] + intent["expanded_terms"][:15]
+        seen_t = set()
+        unique_candidate_terms = []
+        for t in candidate_terms:
+            if t not in seen_t:
+                seen_t.add(t)
+                unique_candidate_terms.append(t)
 
         clause_parts = []
-        for term in search_terms:
+        for term in unique_candidate_terms:
             term_like = f"%{term}%"
-            clause_parts.append("(LOWER(name) LIKE ? OR LOWER(full_name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(topics) LIKE ? OR LOWER(language) LIKE ?)")
+            clause_parts.append("(LOWER(name) LIKE ? OR LOWER(full_name) LIKE ? OR LOWER(description) LIKE ? OR LOWER(description_en) LIKE ? OR LOWER(topics) LIKE ?)")
             params.extend([term_like, term_like, term_like, term_like, term_like])
-        
+
+        if "/" in intent["clean_query"]:
+            clause_parts.append("LOWER(full_name) LIKE ?")
+            params.append(f"%{intent['clean_query'].lower()}%")
+
         if clause_parts:
             query += " AND (" + " OR ".join(clause_parts) + ")"
 
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()
 
-    # If search was given and returned few results (< 8), or is an explicit repo URL / name, fetch dynamically from GitHub API!
-    if clean_search and (len(rows) < 8 or "/" in clean_search):
-        if "/" in clean_search and len(clean_search.split("/")) == 2:
-            new_repo_id = await github_client.fetch_and_persist_repo_on_demand(clean_search)
-        else:
-            # Execute on-demand search query (e.g. for "speech" or "tts" etc.)
-            gh_query = f"{clean_search} OR {' OR '.join(search_terms[:3])}" if len(search_terms) > 1 else clean_search
-            await github_client.search_and_persist_topic_or_query(gh_query, limit=20)
+    # If search was given and returned few results (< 8), fetch dynamically from GitHub API using smart concept query
+    if intent and (len(rows) < 8 or "/" in intent["clean_query"]):
+        if "/" in intent["clean_query"] and len(intent["clean_query"].split("/")) == 2:
+            await github_client.fetch_and_persist_repo_on_demand(intent["clean_query"])
+        elif intent["github_query"]:
+            await github_client.search_and_persist_topic_or_query(intent["github_query"], limit=20)
         
         # Re-query SQLite after dynamic fetch
         cursor = await db.execute(query, params)
@@ -262,37 +267,20 @@ async def list_repositories(
         items.sort(key=lambda x: x["name"].lower(), reverse=is_desc)
     else:
         # Default Mode Sorting
-        if clean_search:
-            # Relevance scoring for search queries
-            def calc_relevance(item):
-                score = 0
-                name_l = item["name"].lower()
-                full_l = item["full_name"].lower()
-                desc_l = (item["description"] or "").lower()
-                topics_l = [t.lower() for t in item["topics"]]
-                
-                # Check exact or prefix match
-                if clean_search.lower() == name_l:
-                    score += 150
-                elif clean_search.lower() in name_l:
-                    score += 80
-                elif clean_search.lower() in full_l:
-                    score += 60
-                
-                # Semantic terms match
-                for st in search_terms:
-                    if st in topics_l:
-                        score += 40
-                    if st in name_l:
-                        score += 30
-                    if st in desc_l:
-                        score += 10
-                return score
+        if intent:
+            # Score each item with smart semantic relevance
+            for it in items:
+                it["_relevance_score"] = score_repository_relevance(it, intent)
+
+            # Filter out items with 0 relevance if we have positive matches
+            pos_matches = [it for it in items if it.get("_relevance_score", 0) > 0]
+            if pos_matches:
+                items = pos_matches
 
             if mode == "popularity":
-                items.sort(key=lambda x: (calc_relevance(x), x["stars"]), reverse=True)
+                items.sort(key=lambda x: (x.get("_relevance_score", 0), x["stars"]), reverse=True)
             else:
-                items.sort(key=lambda x: (calc_relevance(x), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
+                items.sort(key=lambda x: (x.get("_relevance_score", 0), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
         else:
             if mode == "popularity":
                 items.sort(key=lambda x: (x["stars"], x["forks"]), reverse=True)

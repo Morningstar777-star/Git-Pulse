@@ -175,11 +175,18 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
                   {/* Owner / Org Logo (or Letter Monogram Fallback) */}
                   <RepoAvatar owner={repo.owner} name={repo.name} size="sm" />
 
-                  {/* Full Name */}
+                  {/* Full Name Direct Link */}
                   <div className="min-w-0 truncate">
-                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400 group-hover:underline truncate block">
+                    <a
+                      href={repo.html_url || `https://github.com/${repo.full_name}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline truncate block"
+                      title={`Open ${repo.full_name} on GitHub`}
+                    >
                       {repo.full_name}
-                    </span>
+                    </a>
                   </div>
                 </div>
 
@@ -207,11 +214,18 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
                 </div>
               </div>
 
-              {/* Description */}
-              {repo.description && (
-                <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 pl-12 font-sans leading-relaxed">
-                  {repo.description}
-                </p>
+              {/* Description (English translation prioritized) */}
+              {(repo.description_en || repo.description) && (
+                <div className="pl-12">
+                  <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 font-sans leading-relaxed">
+                    {repo.description_en || repo.description}
+                  </p>
+                  {repo.description_en && repo.description_en !== repo.description && (
+                    <span className="text-[9px] font-mono text-blue-500 dark:text-blue-400">
+                      🌐 Translated
+                    </span>
+                  )}
+                </div>
               )}
 
               {/* Topic Pills Row */}
@@ -236,17 +250,29 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
                   )}
                 </div>
 
-                {/* Bookmark Toggle */}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleWatchlist(repo.id);
-                  }}
-                  className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
-                  title={repo.is_saved ? "Remove from Shortlist" : "Add to Shortlist"}
-                >
-                  <Bookmark className={`w-3.5 h-3.5 ${repo.is_saved ? 'fill-amber-500 text-amber-500' : ''}`} />
-                </button>
+                {/* Direct Action Icons */}
+                <div className="flex items-center gap-1">
+                  <a
+                    href={repo.html_url || `https://github.com/${repo.full_name}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
+                    className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                    title="Open on GitHub"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleWatchlist(repo.id);
+                    }}
+                    className="p-1 text-slate-400 hover:text-amber-500 transition-colors"
+                    title={repo.is_saved ? "Remove from Shortlist" : "Add to Shortlist"}
+                  >
+                    <Bookmark className={`w-3.5 h-3.5 ${repo.is_saved ? 'fill-amber-500 text-amber-500' : ''}`} />
+                  </button>
+                </div>
               </div>
 
             </div>

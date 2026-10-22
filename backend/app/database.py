@@ -88,10 +88,27 @@ def init_db_sync():
     );
     """)
 
+    # 6. Persistent Translation Cache for CJK text
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS translations (
+        source_text TEXT PRIMARY KEY,
+        translated_text TEXT NOT NULL,
+        source_lang TEXT DEFAULT 'cjk',
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    # Migration: Ensure description_en column exists on repositories
+    cursor.execute("PRAGMA table_info(repositories);")
+    columns = [col[1] for col in cursor.fetchall()]
+    if "description_en" not in columns:
+        cursor.execute("ALTER TABLE repositories ADD COLUMN description_en TEXT;")
+
     # Create Indexes for high-speed queries
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_cat ON repositories(category_id);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_stars ON repositories(stars DESC);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_lang ON repositories(language);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_name ON repositories(name);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_repo ON snapshots(repo_id, timestamp);")
     
     conn.commit()
