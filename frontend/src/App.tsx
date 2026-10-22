@@ -171,6 +171,14 @@ export const App: React.FC = () => {
       setRadarRepositories((prev) =>
         prev.map((r) => (r.id === repoId ? { ...r, is_saved: res.is_saved } : r))
       );
+      setTopics((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          top_repositories: (cat.top_repositories || []).map((r) =>
+            r.id === repoId ? { ...r, is_saved: res.is_saved } : r
+          )
+        }))
+      );
       if (selectedRepository && selectedRepository.id === repoId) {
         setSelectedRepository({ ...selectedRepository, is_saved: res.is_saved });
       }

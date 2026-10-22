@@ -1,3 +1,4 @@
+import math
 import json
 import re
 import sqlite3
@@ -347,6 +348,18 @@ async def get_repository_detail(repo_id: int, db=Depends(get_db_connection)):
     )
     rel_rows = await rel_cursor.fetchall()
     related = [row_to_repo_dict(r) for r in rel_rows]
+
+    # If category has fewer than 4 repos, supplement with top breakout repos
+    if len(related) < 4:
+        needed = 4 - len(related)
+        exclude_ids = [repo_id] + [r["id"] for r in related]
+        placeholders = ",".join("?" for _ in exclude_ids)
+        fb_cursor = await db.execute(
+            f"SELECT * FROM repositories WHERE id NOT IN ({placeholders}) ORDER BY stars DESC LIMIT ?;",
+            exclude_ids + [needed]
+        )
+        fb_rows = await fb_cursor.fetchall()
+        related.extend([row_to_repo_dict(r) for r in fb_rows])
 
     return RepositoryDetail(
         **base_dict,

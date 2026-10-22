@@ -20,10 +20,28 @@ export const TopicsModal: React.FC<TopicsModalProps> = ({
   const [search, setSearch] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
+  // Close on Escape key & lock body scroll while modal is open
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    const origOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = origOverflow;
+    };
+  }, [isOpen, onClose]);
+
   useEffect(() => {
     if (!isOpen) return;
     setIsLoading(true);
-    fetchAllTopics('', 800)
+    fetchAllTopics('', 2000)
       .then((data) => setTopics(data))
       .catch((err) => console.error("Failed to fetch topics:", err))
       .finally(() => setIsLoading(false));
@@ -36,7 +54,10 @@ export const TopicsModal: React.FC<TopicsModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-black/60 dark:bg-black/80 backdrop-blur-sm animate-in fade-in duration-150"
+      onClick={onClose}
+    >
       <div 
         className="relative w-full max-w-4xl rounded-2xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] shadow-2xl p-6 space-y-5 max-h-[85vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}

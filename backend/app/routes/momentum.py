@@ -13,7 +13,7 @@ CACHED_BENCHMARK: Dict[str, Any] = {}
 
 @router.get("/radar", response_model=List[RepositoryBase])
 async def get_momentum_radar(
-    time_window: str = Query("7d", regex="^(24h|7d|30d)$"),
+    time_window: str = Query("7d", pattern="^(24h|7d|30d)$"),
     page: int = Query(1, ge=1),
     limit: int = Query(30, ge=5, le=300),
     db=Depends(get_db_connection)

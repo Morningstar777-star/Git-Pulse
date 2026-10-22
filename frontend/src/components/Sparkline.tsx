@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useId } from 'react';
 
 interface SparklineProps {
   data: number[];
@@ -37,7 +37,8 @@ export const Sparkline: React.FC<SparklineProps> = ({
 
   const isUpward = data[data.length - 1] >= data[0];
   const strokeColor = color || (isUpward ? '#38bdf8' : '#94a3b8');
-  const gradientId = `spark-grad-${Math.random().toString(36).substr(2, 9)}`;
+  const rawId = useId();
+  const gradientId = `spark-grad-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   return (
     <svg

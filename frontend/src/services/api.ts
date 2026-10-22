@@ -68,7 +68,7 @@ export async function fetchTopics(
   return res.json();
 }
 
-export async function fetchAllTopics(q?: string, limit: number = 400): Promise<TopicItem[]> {
+export async function fetchAllTopics(q?: string, limit: number = 2000): Promise<TopicItem[]> {
   const query = new URLSearchParams();
   if (q) query.set('q', q);
   query.set('limit', limit.toString());
