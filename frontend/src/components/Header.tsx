@@ -75,70 +75,62 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="max-w-[1720px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3.5">
         
         {/* Brand */}
-        <div className="flex items-center gap-3.5 w-full md:w-auto justify-between md:justify-start">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
           <div 
             className="flex items-center gap-2.5 cursor-pointer group select-none" 
             onClick={() => window.location.reload()}
             title="Reload GitPulse Dashboard"
           >
-            {/* Handcrafted Vector Pulse + Git Logo */}
-            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-gradient-to-br from-blue-600 via-indigo-600 to-cyan-400 p-[1.5px] shadow-[0_0_18px_rgba(56,189,248,0.35)] group-hover:shadow-[0_0_24px_rgba(56,189,248,0.55)] transition-all">
-              <div className="w-full h-full rounded-[10px] bg-[#0c121e] flex items-center justify-center overflow-hidden">
-                <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                  {/* Git branch node circles */}
-                  <circle cx="5" cy="12" r="2.2" className="fill-blue-500 stroke-blue-400" strokeWidth="1.5" />
-                  <circle cx="19" cy="6" r="2.2" className="fill-cyan-400 stroke-cyan-300" strokeWidth="1.5" />
-                  <circle cx="19" cy="18" r="2.2" className="fill-emerald-400 stroke-emerald-300" strokeWidth="1.5" />
-                  {/* Pulse waveform connecting git commits */}
-                  <path 
-                    d="M7.2 12h2.8l1.8-6 2.5 12 2-7.5 1.5 1.5h1.2" 
-                    className="stroke-cyan-400" 
-                    strokeWidth="2" 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                  />
-                  {/* Branch arc */}
-                  <path 
-                    d="M16 12c1.2 0 1.8 3.5 1.8 3.8" 
-                    className="stroke-emerald-400/70" 
-                    strokeWidth="1.5" 
-                    strokeLinecap="round" 
-                  />
-                </svg>
-              </div>
+            {/* Iconic Theme-Adaptive GitPulse Emblem */}
+            <div className="relative flex items-center justify-center w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-[#161b22] dark:hover:bg-[#1f242c] border border-slate-200/90 dark:border-[#30363d] shadow-sm group-hover:border-blue-500/50 dark:group-hover:border-cyan-500/50 transition-all">
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none">
+                {/* Git branch node circles */}
+                <circle cx="4.5" cy="12" r="2.2" className="fill-blue-100 dark:fill-cyan-950/60 stroke-blue-600 dark:stroke-cyan-400" strokeWidth="1.8" />
+                <circle cx="19.5" cy="6" r="2.2" className="fill-blue-100 dark:fill-cyan-950/60 stroke-blue-600 dark:stroke-cyan-400" strokeWidth="1.8" />
+                <circle cx="19.5" cy="18" r="2.2" className="fill-blue-100 dark:fill-cyan-950/60 stroke-blue-600 dark:stroke-cyan-400" strokeWidth="1.8" />
+                {/* EKG pulse waveform */}
+                <path 
+                  d="M6.8 12h2.2l1.8-6 2.8 12 2.2-8.5 1.5 2.5h1.7" 
+                  className="stroke-blue-600 dark:stroke-cyan-400" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round" 
+                />
+                {/* Kinetic branch connection */}
+                <path 
+                  d="M15 9.5c1.2-1.3 2.3-2.5 2.3-2.5" 
+                  className="stroke-indigo-500/60 dark:stroke-emerald-400/60" 
+                  strokeWidth="1.6" 
+                  strokeLinecap="round" 
+                />
+              </svg>
             </div>
 
-            {/* Editorial Typographic Contrast (Sans + Instrument Serif Italic) */}
+            {/* Editorial Typographic Contrast */}
             <div className="flex flex-col leading-none">
               <h1 className="text-xl font-extrabold tracking-[-0.03em] text-slate-900 dark:text-white flex items-center">
-                Git<span className="font-serif italic font-normal text-[26px] text-transparent bg-clip-text bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 ml-0.5">Pulse</span>
+                Git<span className="font-serif italic font-normal text-[26px] text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-cyan-500 dark:from-cyan-400 dark:via-sky-300 dark:to-emerald-400 ml-0.5">Pulse</span>
               </h1>
             </div>
           </div>
 
-          {/* Topics Directory Pill (Liquid Glass 2.0 with Pulsing Telemetry Dot) */}
+          {/* Topics Directory Pill (Clean, dot-free) */}
           <button
             onClick={onOpenTopicsModal}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100/90 dark:bg-white/[0.04] hover:bg-slate-200/90 dark:hover:bg-white/[0.08] text-xs font-mono text-slate-700 dark:text-slate-300 border border-slate-300/80 dark:border-white/10 shadow-sm backdrop-blur-md transition-all group"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100/90 dark:bg-[#161b22] hover:bg-slate-200/90 dark:hover:bg-[#1f242c] text-xs font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-[#30363d] shadow-sm transition-all group"
             title="Browse all 900+ topics"
           >
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-500"></span>
-            </span>
-            <span className="flex items-center gap-1 font-medium group-hover:text-blue-600 dark:group-hover:text-cyan-400 transition-colors">
-              <Hash className="w-3.5 h-3.5 text-cyan-500 dark:text-cyan-400" />
-              Topics
-            </span>
+            <Hash className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400 group-hover:scale-110 transition-transform" />
+            <span className="font-medium">Topics</span>
             {totalTopicsCount > 0 && (
-              <span className="text-[11px] font-semibold px-2 py-0.2 rounded-full bg-blue-500/10 dark:bg-cyan-400/15 text-blue-700 dark:text-cyan-300 border border-blue-500/20 dark:border-cyan-400/25">
+              <span className="text-[11px] font-semibold px-2 py-0.2 rounded-full bg-blue-100 dark:bg-cyan-950/60 text-blue-700 dark:text-cyan-300 border border-blue-200 dark:border-cyan-800/40">
                 ({totalTopicsCount})
               </span>
             )}
           </button>
         </div>
 
-        {/* Global Search Bar */}
+        {/* Global Search Bar with Quick Clear */}
         <div className="relative w-full md:max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
@@ -147,11 +139,21 @@ export const Header: React.FC<HeaderProps> = ({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search repositories, topics, languages... ('/')"
-            className="w-full pl-9 pr-10 py-1.5 text-sm bg-slate-50 dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
+            className="w-full pl-9 pr-14 py-1.5 text-sm bg-slate-50 dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] rounded-lg text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all font-sans"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 pointer-events-none">
-            /
-          </kbd>
+          {searchQuery ? (
+            <button
+              onClick={() => onSearchChange('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded text-xs"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          ) : (
+            <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1.5 py-0.5 text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 pointer-events-none">
+              /
+            </kbd>
+          )}
         </div>
 
         {/* Controls: Mode Switcher, Shortlist & Theme Toggle */}

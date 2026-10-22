@@ -51,10 +51,10 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRadar, setIsLoadingRadar] = useState(false);
 
-  // Load Topics (Curated categories with 30 repos each, sorted by mode)
-  const loadTopics = useCallback(async (currentMode: SortMode) => {
+  // Load Topics (Curated categories with 30 repos each, sorted by mode and timeframe)
+  const loadTopics = useCallback(async (currentMode: SortMode, currentTimeWindow: TimeWindow) => {
     try {
-      const topicsData = await fetchTopics(currentMode, 30);
+      const topicsData = await fetchTopics(currentMode, currentTimeWindow, 30);
       setTopics(topicsData);
     } catch (err) {
       console.error("Failed to load topics:", err);
@@ -127,10 +127,10 @@ export const App: React.FC = () => {
     loadInitialData();
   }, [loadInitialData]);
 
-  // Trigger topics reload on mode change (Momentum vs Popularity)
+  // Trigger topics reload on mode OR timeWindow change
   useEffect(() => {
-    loadTopics(mode);
-  }, [mode, loadTopics]);
+    loadTopics(mode, timeWindow);
+  }, [mode, timeWindow, loadTopics]);
 
   // Trigger main repo load on filter change
   useEffect(() => {
@@ -228,6 +228,8 @@ export const App: React.FC = () => {
           topics={topics}
           activeCategoryId={activeCategoryId}
           activeTopic={activeTopic}
+          searchQuery={searchQuery}
+          onClearSearch={() => setSearchQuery('')}
           onSelectCategory={(catId) => {
             setActiveCategoryId(catId);
             setActiveTopic(null);

@@ -11,12 +11,14 @@ router = APIRouter(prefix="/api/topics", tags=["Topics"])
 @router.get("", response_model=List[TopicCategory])
 async def get_topics_overview(
     mode: str = Query("momentum", pattern="^(momentum|popularity)$"),
+    time_window: str = Query("7d", pattern="^(24h|7d|30d)$"),
     limit_per_topic: int = Query(30, ge=4, le=100),
     db=Depends(get_db_connection)
 ):
     """
     Returns high-level curated categories for top tabs, populated with
-    repositories ordered by the selected mode (BKM momentum or Popularity stars).
+    repositories ordered by the selected mode (BKM momentum or Popularity stars)
+    and selected time window (24h daily, 7d weekly, 30d monthly).
     """
     topics_out = []
 
@@ -35,6 +37,7 @@ async def get_topics_overview(
 
         top_repos = await list_repositories(
             mode=mode,
+            time_window=time_window,
             category_id=cat_id,
             page=1,
             page_size=limit_per_topic,

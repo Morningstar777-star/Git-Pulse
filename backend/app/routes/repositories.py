@@ -141,6 +141,7 @@ async def list_repositories(
     topic: Optional[str] = None,
     language: Optional[str] = None,
     search: Optional[str] = None,
+    q: Optional[str] = None,
     min_stars: Optional[int] = None,
     is_emerging: Optional[bool] = None,
     watchlist_only: bool = False,
@@ -183,8 +184,9 @@ async def list_repositories(
         params.append(1 if is_emerging else 0)
 
     intent = None
-    if search and search.strip():
-        intent = parse_search_intent(search)
+    effective_search = (search or q or "").strip()
+    if effective_search:
+        intent = parse_search_intent(effective_search)
         
         # Candidate SQL filtering: match meaningful keywords or concept terms
         candidate_terms = intent["meaningful_keywords"] + intent["expanded_terms"][:15]
@@ -283,16 +285,24 @@ async def list_repositories(
                 items.sort(key=lambda x: (x.get("_relevance_score", 0), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
         else:
             if mode == "popularity":
-                items.sort(key=lambda x: (x["stars"], x["forks"]), reverse=True)
+                # Surface high-star breakout projects with active velocity (like rea, NOT stale +1/day dinosaurs like tensorflow)
+                def calc_popularity_score(x):
+                    stars = max(10, x.get("stars", 0))
+                    spd = max(1, x.get("stars_per_day", 0))
+                    # Stale penalty if repo gains < 5 stars/day despite massive historical baseline
+                    stale_factor = 0.2 if spd <= 2 else (0.5 if spd < 10 else 1.0)
+                    return (math.log10(stars) * 12.0 + math.log10(spd) * 16.0 + (x.get("momentum_score", 0.0) * 0.1)) * stale_factor
+
+                items.sort(key=calc_popularity_score, reverse=True)
             else:
-                # Bayesian Kinetic Momentum (BKM) Engine: surface authentic breakouts with high momentum score
+                # Bayesian Kinetic Momentum (BKM) Engine: timeframe-responsive velocity & growth %
                 if time_window == "24h":
-                    items.sort(key=lambda x: (x["momentum_score"], x["growth_1d_pct"], x["stars_per_day"]), reverse=True)
+                    items.sort(key=lambda x: (x.get("growth_1d_pct") or 0.0, x.get("recent_growth_24h", 0), x.get("momentum_score", 0.0)), reverse=True)
                 elif time_window == "30d":
-                    items.sort(key=lambda x: (x["momentum_score"], (x.get("growth_30d_pct") or 0.0), x["stars_per_day"]), reverse=True)
+                    items.sort(key=lambda x: ((x.get("growth_30d_pct") or 0.0), x.get("recent_growth_30d", 0), x.get("momentum_score", 0.0)), reverse=True)
                 else:
-                    # 7d default: sort primarily by BKM composite momentum score, followed by 7d growth %
-                    items.sort(key=lambda x: (x["momentum_score"], x["growth_7d_pct"], x["stars_per_day"]), reverse=True)
+                    # 7d default: 7-day velocity surge and relative breakout %
+                    items.sort(key=lambda x: (x.get("growth_7d_pct") or 0.0, x.get("recent_growth_7d", 0), x.get("momentum_score", 0.0)), reverse=True)
 
     # Assign momentum rank
     for idx, item in enumerate(items):

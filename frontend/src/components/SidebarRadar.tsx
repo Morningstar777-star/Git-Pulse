@@ -60,8 +60,18 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
   hasMore,
   isLoading
 }) => {
-  const [sortCol, setSortCol] = useState<RadarSortCol>('per_day');
+  const [sortCol, setSortCol] = useState<RadarSortCol>(
+    timeWindow === '24h' ? '1d' : timeWindow === '30d' ? '30d' : '7d'
+  );
   const [sortAsc, setSortAsc] = useState<boolean>(false);
+
+  // Sync sorting column whenever the time window changes (24h -> 1d, 7d -> 7d, 30d -> 30d)
+  React.useEffect(() => {
+    if (timeWindow === '24h') setSortCol('1d');
+    else if (timeWindow === '30d') setSortCol('30d');
+    else setSortCol('7d');
+    setSortAsc(false);
+  }, [timeWindow]);
 
   const handleSortClick = (col: RadarSortCol) => {
     if (sortCol === col) {

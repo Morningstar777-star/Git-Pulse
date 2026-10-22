@@ -6,67 +6,123 @@ from typing import List, Dict, Any
 # Topics taxonomy definition with icons & metadata
 TOPICS_METADATA = [
     {
-        "id": "ai-ml",
-        "name": "Artificial Intelligence & Machine Learning",
-        "description": "Foundational deep learning, neural networks, computer vision, and diffusion models.",
-        "icon": "Cpu",
-        "keywords": ["machine-learning", "deep-learning", "pytorch", "neural-network", "computer-vision"]
-    },
-    {
         "id": "llm-agents",
-        "name": "LLMs, AI Agents & Developer Tools",
+        "name": "LLMs, AI Agents & Reasoning Engines",
         "description": "Autonomous agents, local inference engines, prompt engineering, and LLM orchestration.",
         "icon": "Bot",
-        "keywords": ["llm", "ai-agents", "agentic", "rag", "ollama", "langchain"]
+        "keywords": ["llm", "ai-agents", "agentic", "rag", "ollama", "langchain", "deepseek"]
+    },
+    {
+        "id": "web-scraping",
+        "name": "Web Scraping, Crawlers & Extraction",
+        "description": "High-throughput data extraction, browser automation, headless spiders, and intelligent parsers.",
+        "icon": "Layers",
+        "keywords": ["web-scraping", "crawler", "playwright", "puppeteer", "scrapy", "spider", "crawl4ai"]
+    },
+    {
+        "id": "speech-audio",
+        "name": "Speech Synthesis, Voice AI & Audio DSP",
+        "description": "State-of-the-art text-to-speech, voice cloning, real-time transcription, and audio models.",
+        "icon": "Mic",
+        "keywords": ["speech", "tts", "whisper", "voice-cloning", "speech-recognition", "audio", "fish-speech"]
+    },
+    {
+        "id": "gaming-graphics",
+        "name": "Game Engines, 3D Models & WebGL",
+        "description": "Interactive 3D rendering, WebGL canvas frameworks, shaders, spatial physics, and game engines.",
+        "icon": "Gamepad2",
+        "keywords": ["3d", "threejs", "webgl", "game-engine", "godot", "rendering", "shaders", "react-three-fiber"]
+    },
+    {
+        "id": "medical-science",
+        "name": "Medical Science & BioTech Intelligence",
+        "description": "Computational biology, medical imaging models, bioinformatics, and healthcare diagnostics.",
+        "icon": "Activity",
+        "keywords": ["medical", "bioinformatics", "healthcare", "genomics", "clinical", "biology", "biomedical"]
+    },
+    {
+        "id": "arts-culture",
+        "name": "Arts, Culture & Creative Technology",
+        "description": "Open-source digital canvas tools, vector art editors, generative music, and cultural archives.",
+        "icon": "Palette",
+        "keywords": ["art", "culture", "photo-editor", "vector", "drawing", "creative-coding", "photocraft"]
+    },
+    {
+        "id": "smart-automation",
+        "name": "Browser Agents & Autonomous Workflows",
+        "description": "Automated web browsing agents, robotic process automation, and intelligent task execution.",
+        "icon": "Cpu",
+        "keywords": ["browser-use", "automation", "workflow", "browser-agent", "task-automation", "bot"]
+    },
+    {
+        "id": "privacy-adblock",
+        "name": "Privacy, Adblocking & Anti-Tracking",
+        "description": "System-wide debloaters, network adblocking, DNS filters, and anti-censorship protocols.",
+        "icon": "EyeOff",
+        "keywords": ["privacy", "adblock", "debloat", "anti-tracking", "dns", "vpn", "tor", "cleanyourtv"]
+    },
+    {
+        "id": "education-learning",
+        "name": "Education, Open Knowledge & Books",
+        "description": "Curated life guides, algorithmic cheat sheets, computer science textbooks, and interactive tutorials.",
+        "icon": "BookOpen",
+        "keywords": ["education", "learning", "curriculum", "textbooks", "tutorial", "awesome-list", "life-guide"]
+    },
+    {
+        "id": "cybersecurity",
+        "name": "Cybersecurity, Reverse Engineering & Pentest",
+        "description": "Vulnerability scanning, offensive security tooling, decompiler suites, and binary analysis.",
+        "icon": "ShieldCheck",
+        "keywords": ["cybersecurity", "security", "pentest", "reverse-engineering", "decompiler", "vulnerability", "rea"]
     },
     {
         "id": "web-frameworks",
-        "name": "Web Development & Frameworks",
-        "description": "Next-generation frontend, full-stack runtimes, UI libraries, and reactive systems.",
+        "name": "Web Development & Reactive UI",
+        "description": "Next-generation frontend, full-stack runtimes, reactive UI libraries, and styling systems.",
         "icon": "Globe",
         "keywords": ["react", "nextjs", "vue", "typescript", "tailwind", "web"]
     },
     {
         "id": "data-engineering",
-        "name": "Data Engineering & Databases",
-        "description": "High-throughput stream processing, analytical columnar stores, vector databases, and engines.",
+        "name": "Data Engineering & Analytics Stores",
+        "description": "High-throughput stream processing, analytical columnar stores, and vector databases.",
         "icon": "Database",
         "keywords": ["database", "data-engineering", "duckdb", "polars", "sql", "clickhouse"]
     },
     {
         "id": "quant-datasci",
-        "name": "Quantitative Finance & Data Science",
+        "name": "Quantitative Finance & Trading Systems",
         "description": "Algorithmic trading frameworks, backtesting engines, statistical modeling, and financial analytics.",
         "icon": "TrendingUp",
-        "keywords": ["trading", "quantitative-finance", "backtesting", "finance", "data-science"]
+        "keywords": ["trading", "quantitative-finance", "backtesting", "finance", "crypto"]
     },
     {
-        "id": "cybersecurity",
-        "name": "Cybersecurity & AppSec",
-        "description": "Vulnerability scanning, offensive security tooling, penetration testing, and zero-trust auth.",
-        "icon": "ShieldCheck",
-        "keywords": ["cybersecurity", "security", "pentesting", "infosec", "appsec"]
-    },
-    {
-        "id": "robotics-hardware",
-        "name": "Robotics, IoT & Hardware",
-        "description": "ROS systems, microcontroller firmware, edge robotics, and physical computing platforms.",
-        "icon": "Radio",
-        "keywords": ["robotics", "embedded", "ros", "iot", "firmware", "hardware"]
+        "id": "ai-ml",
+        "name": "Artificial Intelligence & Core Machine Learning",
+        "description": "Foundational deep learning, neural networks, computer vision, and diffusion models.",
+        "icon": "Brain",
+        "keywords": ["machine-learning", "deep-learning", "pytorch", "neural-network", "computer-vision"]
     },
     {
         "id": "infrastructure",
-        "name": "Open Source Infrastructure",
+        "name": "Open Source Infrastructure & DevOps",
         "description": "Cloud-native orchestration, container engines, mesh networks, and serverless runtimes.",
         "icon": "Server",
         "keywords": ["kubernetes", "docker", "devops", "cloud-native", "infrastructure"]
     },
     {
+        "id": "robotics-hardware",
+        "name": "Robotics, IoT & Embedded Systems",
+        "description": "ROS systems, microcontroller firmware, edge robotics, and physical computing platforms.",
+        "icon": "Radio",
+        "keywords": ["robotics", "embedded", "ros", "iot", "firmware", "hardware"]
+    },
+    {
         "id": "emerging-tech",
-        "name": "Emerging & Unclassified Technologies",
+        "name": "Emerging Technologies & Breakthrough Innovations",
         "description": "Breakout experimental utilities, new programming languages, cross-disciplinary innovations.",
         "icon": "Sparkles",
-        "keywords": ["experimental", "emerging", "breakout", "cli", "compiler"]
+        "keywords": ["experimental", "emerging", "breakout", "novelty", "innovation"]
     }
 ]
 

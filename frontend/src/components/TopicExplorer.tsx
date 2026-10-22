@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Filter,
   X,
+  Search,
   ChevronLeft,
   ChevronRight,
   ChevronDown,
@@ -23,6 +24,8 @@ interface TopicExplorerProps {
   topics: TopicCategory[];
   activeCategoryId: string | null;
   activeTopic: string | null;
+  searchQuery?: string;
+  onClearSearch?: () => void;
   onSelectCategory: (catId: string | null) => void;
   onSelectTopic: (topic: string | null) => void;
   onSelectRepository: (repo: Repository) => void;
@@ -64,6 +67,8 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
   topics,
   activeCategoryId,
   activeTopic,
+  searchQuery,
+  onClearSearch,
   onSelectCategory,
   onSelectTopic,
   onSelectRepository,
@@ -333,6 +338,84 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
             </tbody>
           </table>
         </div>
+      </main>
+    );
+  }
+
+  // -------------------------------------------------------------
+  // ACTIVE SEARCH RESULTS VIEW
+  // -------------------------------------------------------------
+  if (searchQuery && searchQuery.trim()) {
+    return (
+      <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-5 space-y-6">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-[#30363d]">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-mono text-slate-400">Search Results for:</span>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-blue-600 text-white text-xs font-mono font-medium shadow-sm">
+              "{searchQuery}"
+              {onClearSearch && (
+                <button onClick={onClearSearch} className="hover:opacity-75">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </span>
+            <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+              ({repositories.length} {repositories.length === 1 ? 'repository' : 'repositories'} found)
+            </span>
+          </div>
+
+          {onClearSearch && (
+            <button
+              onClick={onClearSearch}
+              className="text-xs font-mono text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+            >
+              <span>Clear search</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Repositories Grid */}
+        {repositories.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {repositories.map((repo, idx) => (
+              <CompactCard
+                key={repo.id}
+                repo={repo}
+                rank={idx + 1}
+                onSelectRepository={onSelectRepository}
+                onToggleWatchlist={onToggleWatchlist}
+                onSelectTopic={onSelectTopic}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="py-16 text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-slate-100 dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] flex items-center justify-center text-slate-400 mx-auto">
+              <Search className="w-6 h-6" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+              No repositories found matching "{searchQuery}"
+            </h3>
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto font-sans">
+              Try a different keyword, conversational prompt, or domain topic.
+            </p>
+          </div>
+        )}
+
+        {/* Load More */}
+        {hasMore && repositories.length > 0 && (
+          <div className="py-6 text-center">
+            <button
+              onClick={onLoadMore}
+              disabled={isLoading}
+              className="px-6 py-2 rounded-xl bg-white dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] text-xs font-mono text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#21262d] transition-all shadow-sm flex items-center justify-center gap-2 mx-auto"
+            >
+              <ChevronDown className="w-4 h-4" />
+              <span>{isLoading ? "Loading..." : "Load More Results"}</span>
+            </button>
+          </div>
+        )}
       </main>
     );
   }

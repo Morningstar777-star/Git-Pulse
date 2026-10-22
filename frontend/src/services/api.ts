@@ -58,8 +58,12 @@ export async function fetchMomentumRadar(
   return res.json();
 }
 
-export async function fetchTopics(mode: SortMode = 'momentum', limitPerTopic: number = 30): Promise<TopicCategory[]> {
-  const res = await fetch(`${API_BASE}/topics?mode=${mode}&limit_per_topic=${limitPerTopic}`);
+export async function fetchTopics(
+  mode: SortMode = 'momentum', 
+  timeWindow: TimeWindow = '7d', 
+  limitPerTopic: number = 30
+): Promise<TopicCategory[]> {
+  const res = await fetch(`${API_BASE}/topics?mode=${mode}&time_window=${timeWindow}&limit_per_topic=${limitPerTopic}`);
   if (!res.ok) throw new Error('Failed to fetch topic categories');
   return res.json();
 }

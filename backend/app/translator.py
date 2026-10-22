@@ -78,7 +78,9 @@ def translate_cjk_sync(text: Optional[str], conn=None) -> Optional[str]:
     try:
         # Create unverified SSL context to prevent Windows cert store ASN1 issues
         ctx = ssl._create_unverified_context()
-        encoded = urllib.parse.quote(text)
+        # Truncate to 500 chars to respect HTTP GET URL limits and avoid 400 Bad Request
+        truncated = text[:500]
+        encoded = urllib.parse.quote(truncated)
         url = f"https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q={encoded}"
         
         req = urllib.request.Request(

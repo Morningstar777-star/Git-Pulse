@@ -268,35 +268,109 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
           </div>
 
           {cleanSnapshots.length > 1 ? (
-            <div className="pt-2 w-full overflow-hidden">
-              <div className="h-32 w-full flex items-end gap-1.5 sm:gap-2 border-b border-l border-slate-200 dark:border-[#2a3241] px-2 pb-2">
-                {(() => {
-                  const starsArr = cleanSnapshots.map((s) => s.stars);
-                  const min = Math.min(...starsArr);
-                  const max = Math.max(...starsArr);
-                  const range = max - min || 1;
+            <div className="pt-2 w-full">
+              {(() => {
+                const W = 640;
+                const H = 140;
+                const padX = 24;
+                const padTop = 16;
+                const padBottom = 26;
+                const plotW = W - padX * 2;
+                const plotH = H - padTop - padBottom;
 
-                  return cleanSnapshots.map((snap, i) => {
-                    const heightPercent = Math.max(18, ((snap.stars - min) / range) * 100);
+                const starsArr = cleanSnapshots.map((s) => s.stars);
+                const min = Math.min(...starsArr);
+                const max = Math.max(...starsArr);
+                const range = max - min || 1;
 
-                    return (
-                      <div key={i} className="flex-1 min-w-0 flex flex-col items-center h-full justify-end group relative">
-                        {/* Tooltip */}
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity text-[10px] font-mono text-slate-800 dark:text-slate-200 whitespace-nowrap bg-white dark:bg-black px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800 shadow-md pointer-events-none z-10">
-                          {snap.stars.toLocaleString()}
-                        </div>
-                        <div 
-                          className="w-full max-w-[36px] rounded-t-sm bg-gradient-to-t from-blue-600 to-cyan-400 group-hover:to-cyan-300 transition-all cursor-pointer"
-                          style={{ height: `${heightPercent}%` }}
-                        />
-                        <span className="text-[9px] font-mono text-slate-400 truncate w-full text-center mt-1">
-                          {snap.date ? snap.date.slice(5) : ''}
-                        </span>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
+                const pts = cleanSnapshots.map((snap, i) => {
+                  const x = padX + (i / Math.max(1, cleanSnapshots.length - 1)) * plotW;
+                  const y = padTop + plotH - ((snap.stars - min) / range) * plotH;
+                  return { x, y, snap };
+                });
+
+                // Generate smooth SVG curve using cubic bezier control points
+                let lineD = `M ${pts[0].x} ${pts[0].y}`;
+                for (let i = 0; i < pts.length - 1; i++) {
+                  const p0 = pts[i];
+                  const p1 = pts[i + 1];
+                  const mx = (p0.x + p1.x) / 2;
+                  lineD += ` C ${mx} ${p0.y}, ${mx} ${p1.y}, ${p1.x} ${p1.y}`;
+                }
+
+                const baseBottomY = padTop + plotH + 4;
+                const areaD = `${lineD} L ${pts[pts.length - 1].x} ${baseBottomY} L ${pts[0].x} ${baseBottomY} Z`;
+
+                return (
+                  <div className="relative w-full overflow-hidden">
+                    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-36 overflow-visible select-none">
+                      <defs>
+                        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#06b6d4" stopOpacity="0.45" />
+                          <stop offset="60%" stopColor="#3b82f6" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#3b82f6" stopOpacity="0.0" />
+                        </linearGradient>
+                        <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#38bdf8" />
+                          <stop offset="100%" stopColor="#2563eb" />
+                        </linearGradient>
+                      </defs>
+
+                      {/* Subtle horizontal grid guide lines */}
+                      <line x1={padX} y1={padTop} x2={W - padX} y2={padTop} className="stroke-slate-200 dark:stroke-[#21262d]" strokeDasharray="3 3" strokeWidth="1" />
+                      <line x1={padX} y1={padTop + plotH / 2} x2={W - padX} y2={padTop + plotH / 2} className="stroke-slate-200 dark:stroke-[#21262d]" strokeDasharray="3 3" strokeWidth="1" />
+                      <line x1={padX} y1={baseBottomY} x2={W - padX} y2={baseBottomY} className="stroke-slate-200 dark:stroke-[#21262d]" strokeWidth="1" />
+
+                      {/* Filled Coloured Area Graph */}
+                      <path d={areaD} fill="url(#areaGradient)" />
+
+                      {/* Highlighted Top Stroke Curve */}
+                      <path d={lineD} fill="none" stroke="url(#lineGradient)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+
+                      {/* Interactive Vertex Data Points */}
+                      {pts.map((p, idx) => (
+                        <g key={idx} className="group cursor-pointer">
+                          <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r="4"
+                            className="fill-white dark:fill-[#0c121e] stroke-cyan-500 dark:stroke-cyan-400 stroke-2 group-hover:r-6 transition-all"
+                          />
+                          {/* Hover Tooltip Box in SVG */}
+                          <g className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                            <rect
+                              x={Math.min(W - 90, Math.max(10, p.x - 45))}
+                              y={Math.max(2, p.y - 28)}
+                              width="90"
+                              height="20"
+                              rx="5"
+                              className="fill-slate-900/95 dark:fill-black/95 stroke-slate-700/80 stroke-[0.8]"
+                            />
+                            <text
+                              x={Math.min(W - 45, Math.max(55, p.x))}
+                              y={Math.max(16, p.y - 14)}
+                              textAnchor="middle"
+                              className="fill-white font-mono text-[10px] font-semibold"
+                            >
+                              ★ {p.snap.stars.toLocaleString()}
+                            </text>
+                          </g>
+
+                          {/* Date label at bottom */}
+                          <text
+                            x={p.x}
+                            y={H - 6}
+                            textAnchor="middle"
+                            className="fill-slate-400 font-mono text-[9px]"
+                          >
+                            {p.snap.date ? p.snap.date.slice(5) : ''}
+                          </text>
+                        </g>
+                      ))}
+                    </svg>
+                  </div>
+                );
+              })()}
             </div>
           ) : (
             <div className="py-6 text-center text-xs font-mono text-slate-400">
