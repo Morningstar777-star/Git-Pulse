@@ -22,7 +22,14 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 class VercelPathMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        # Prefer original client URL headers forwarded by Vercel CDN/routing layer
+        # 1. Query parameter fallback from Vercel rewrite
+        route_param = request.query_params.get("__path")
+        if route_param:
+            target_path = "/api/" + route_param.lstrip("/")
+            request.scope["path"] = target_path
+            return await call_next(request)
+
+        # 2. Check original URL headers forwarded by Vercel CDN/routing layer
         raw_path = (
             request.headers.get("x-matched-path")
             or request.headers.get("x-forwarded-uri")
@@ -31,16 +38,16 @@ class VercelPathMiddleware(BaseHTTPMiddleware):
         )
         path = raw_path.split("?")[0] if raw_path else ""
 
-        # Normalize any internal /index.py references to clean /api path
+        # 3. Normalize internal /index.py references
         if "index.py" in path:
             idx = path.find("index.py")
-            after = path[idx + len("index.py"):]
-            if after.startswith("/"):
-                path = "/api" + after if not after.startswith("/api") else after
+            after = path[idx + len("index.py"):].lstrip("/")
+            if after:
+                path = "/api/" + after if not after.startswith("api/") else "/" + after
             else:
-                path = "/" if not after else after
+                path = "/api"
 
-        if path:
+        if path and not path.endswith("index.py"):
             request.scope["path"] = path
 
         return await call_next(request)
