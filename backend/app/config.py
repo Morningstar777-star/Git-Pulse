@@ -15,7 +15,7 @@ else:
 
 # Configuration Settings
 GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
-TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "").strip()
+TURSO_DATABASE_URL = os.getenv("TURSO_DATABASE_URL", "libsql://git-pulse-lucimorningstar.aws-ap-south-1.turso.io").strip()
 TURSO_AUTH_TOKEN = os.getenv("TURSO_AUTH_TOKEN", "").strip()
 
 # Resilient Database Path Resolution (supports local dev, Docker, and Vercel Serverless)
