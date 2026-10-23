@@ -22,13 +22,27 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 class VercelPathMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
-        matched = request.headers.get("x-matched-path")
-        if matched and not matched.endswith("index.py"):
-            request.scope["path"] = matched
-        elif request.headers.get("x-forwarded-uri"):
-            fwd = request.headers.get("x-forwarded-uri").split("?")[0]
-            if fwd and not fwd.endswith("index.py"):
-                request.scope["path"] = fwd
+        # Prefer original client URL headers forwarded by Vercel CDN/routing layer
+        raw_path = (
+            request.headers.get("x-matched-path")
+            or request.headers.get("x-forwarded-uri")
+            or request.headers.get("x-original-uri")
+            or request.scope.get("path", "")
+        )
+        path = raw_path.split("?")[0] if raw_path else ""
+
+        # Normalize any internal /index.py references to clean /api path
+        if "index.py" in path:
+            idx = path.find("index.py")
+            after = path[idx + len("index.py"):]
+            if after.startswith("/"):
+                path = "/api" + after if not after.startswith("/api") else after
+            else:
+                path = "/" if not after else after
+
+        if path:
+            request.scope["path"] = path
+
         return await call_next(request)
 
 fastapi_app.add_middleware(VercelPathMiddleware)

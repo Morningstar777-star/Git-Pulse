@@ -41,8 +41,11 @@ async def lifespan(app: FastAPI):
             print(f"[GitPulse] Seeding note: {e}")
         await scheduler.start()
     else:
-        # On Vercel serverless, verify schema on remote cloud database
-        init_db_sync()
+        # On Vercel serverless, safely verify schema on remote cloud database
+        try:
+            init_db_sync()
+        except Exception as e:
+            print(f"[GitPulse] Serverless schema init notice: {e}")
 
     yield
 
@@ -87,8 +90,8 @@ app.include_router(watchlist.router)
 app.include_router(status.router)
 app.include_router(auth.router)
 
-# Serve built frontend static files locally (On Vercel, static files are served by Vercel CDN)
-if not os.getenv("VERCEL") and FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
+# Serve built frontend static files if present, else expose clean API root
+if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST_DIR / "assets")), name="assets")
 
     @app.get("/{full_path:path}")
@@ -107,7 +110,5 @@ else:
             "name": "GitPulse Explorer API",
             "status": "ONLINE",
             "message": "GitPulse Explorer Serverless API Active",
-            "api_docs": "/docs"
-        }
             "api_docs": "/docs"
         }
