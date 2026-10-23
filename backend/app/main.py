@@ -12,7 +12,7 @@ ssl.create_default_context = _safe_create_default_context
 
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
@@ -83,15 +83,15 @@ app.include_router(watchlist.router)
 app.include_router(status.router)
 app.include_router(auth.router)
 
-# Serve built frontend static files if present
-if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
+# Serve built frontend static files locally (On Vercel, static files are served by Vercel CDN)
+if not os.getenv("VERCEL") and FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST_DIR / "assets")), name="assets")
 
     @app.get("/{full_path:path}")
     async def serve_spa(full_path: str):
         # Don't intercept API routes
         if full_path.startswith("api/"):
-            return None
+            raise HTTPException(status_code=404, detail="API endpoint not found")
         file_path = FRONTEND_DIST_DIR / full_path
         if file_path.exists() and file_path.is_file():
             return FileResponse(file_path)
@@ -102,6 +102,8 @@ else:
         return {
             "name": "GitPulse Explorer API",
             "status": "ONLINE",
-            "message": "Frontend not yet built. Run 'npm run build' inside frontend directory, or run Vite dev server at http://localhost:5173",
+            "message": "GitPulse Explorer Serverless API Active",
+            "api_docs": "/docs"
+        }
             "api_docs": "/docs"
         }
