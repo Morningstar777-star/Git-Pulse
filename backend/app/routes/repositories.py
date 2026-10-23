@@ -159,7 +159,7 @@ async def list_repositories(
     """
     # Fetch watchlist repo IDs for authenticated user (empty if unauthenticated)
     saved_ids = set()
-    if user:
+    if user and isinstance(user, dict):
         saved_cursor = await db.execute("SELECT repo_id FROM user_watchlist WHERE user_id = ?;", (user["id"],))
         saved_rows = await saved_cursor.fetchall()
         saved_ids = {r[0] for r in saved_rows}
@@ -332,7 +332,7 @@ async def get_repository_detail(
 
     # Check watchlist for authenticated user
     is_saved = False
-    if user:
+    if user and isinstance(user, dict):
         saved_cursor = await db.execute(
             "SELECT 1 FROM user_watchlist WHERE user_id = ? AND repo_id = ?;",
             (user["id"], repo_id)

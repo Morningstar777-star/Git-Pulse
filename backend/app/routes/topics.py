@@ -2,6 +2,7 @@ import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from app.database import get_db_connection
+from app.auth import get_current_user_optional
 from app.models.schemas import TopicCategory, TopicItem
 from app.seed_data import TOPICS_METADATA
 from app.routes.repositories import list_repositories
@@ -13,6 +14,7 @@ async def get_topics_overview(
     mode: str = Query("momentum", pattern="^(momentum|popularity)$"),
     time_window: str = Query("7d", pattern="^(24h|7d|30d)$"),
     limit_per_topic: int = Query(30, ge=4, le=100),
+    user: Optional[dict] = Depends(get_current_user_optional),
     db=Depends(get_db_connection)
 ):
     """
@@ -20,37 +22,49 @@ async def get_topics_overview(
     repositories ordered by the selected mode (BKM momentum or Popularity stars)
     and selected time window (24h daily, 7d weekly, 30d monthly).
     """
-    topics_out = []
+    import asyncio
 
-    for topic_meta in TOPICS_METADATA:
-        cat_id = topic_meta["id"]
-        
-        cursor = await db.execute("""
-            SELECT 
-                COUNT(*) as repo_count,
-                COALESCE(SUM(stars), 0) as total_stars,
-                COALESCE(SUM(CASE WHEN is_emerging = 1 THEN 1 ELSE 0 END), 0) as emerging_count
-            FROM repositories
-            WHERE category_id = ?;
-        """, (cat_id,))
-        row = await cursor.fetchone()
+    # Single high-speed GROUP BY query for all category stats
+    stats_cursor = await db.execute("""
+        SELECT 
+            category_id,
+            COUNT(*) as repo_count,
+            COALESCE(SUM(stars), 0) as total_stars,
+            COALESCE(SUM(CASE WHEN is_emerging = 1 THEN 1 ELSE 0 END), 0) as emerging_count
+        FROM repositories
+        GROUP BY category_id;
+    """)
+    stats_rows = await stats_cursor.fetchall()
+    stats_by_cat = {r["category_id"]: r for r in stats_rows}
 
-        top_repos = await list_repositories(
+    # Parallel asynchronous fetch of top repositories across categories
+    async def fetch_cat_repos(cat_id: str):
+        return await list_repositories(
             mode=mode,
             time_window=time_window,
             category_id=cat_id,
             page=1,
             page_size=limit_per_topic,
+            user=user,
             db=db
         )
+
+    tasks = [fetch_cat_repos(meta["id"]) for meta in TOPICS_METADATA]
+    all_top_repos = await asyncio.gather(*tasks)
+
+    topics_out = []
+    for idx, topic_meta in enumerate(TOPICS_METADATA):
+        cat_id = topic_meta["id"]
+        stats = stats_by_cat.get(cat_id, {})
+        top_repos = all_top_repos[idx]
 
         topics_out.append(TopicCategory(
             id=cat_id,
             name=topic_meta["name"],
             description=topic_meta["description"],
-            repository_count=row["repo_count"],
-            total_stars=row["total_stars"],
-            emerging_count=row["emerging_count"],
+            repository_count=stats.get("repo_count", 0),
+            total_stars=stats.get("total_stars", 0),
+            emerging_count=stats.get("emerging_count", 0),
             top_repositories=top_repos
         ))
 

@@ -86,6 +86,61 @@ class TursoClient:
             out.append(row_dict)
         return out
 
+    def execute_raw(self, sql: str, params: Optional[List[Any]] = None) -> 'TursoCursor':
+        """Execute SQL statement and return a cursor with metadata and lastrowid."""
+        stmt: Dict[str, Any] = {"sql": sql}
+        if params:
+            stmt["args"] = [self._convert_value(p) for p in params]
+
+        payload = {
+            "requests": [
+                {"type": "execute", "stmt": stmt},
+                {"type": "close"}
+            ]
+        }
+
+        resp = requests.post(self.pipeline_url, headers=self.headers, json=payload, timeout=self.timeout)
+        if resp.status_code != 200:
+            raise Exception(f"Turso API Error ({resp.status_code}): {resp.text}")
+
+        data = resp.json()
+        results = data.get("results", [])
+        if not results:
+            return TursoCursor([])
+
+        first_res = results[0]
+        if first_res.get("type") == "error":
+            err = first_res.get("error", {})
+            raise Exception(f"Turso SQL Error: {err.get('message', 'Unknown error')}")
+
+        resp_obj = first_res.get("response", {})
+        result_obj = resp_obj.get("result", {})
+        cols = [c.get("name") for c in result_obj.get("cols", [])]
+        rows = result_obj.get("rows", [])
+        last_insert_rowid = result_obj.get("last_insert_rowid")
+        affected_row_count = result_obj.get("affected_row_count", 0)
+
+        out = []
+        for r in rows:
+            row_dict = {}
+            for idx, col_name in enumerate(cols):
+                cell = r[idx]
+                if cell.get("type") == "null":
+                    val = None
+                elif cell.get("type") == "integer":
+                    val = int(cell.get("value"))
+                elif cell.get("type") == "float":
+                    val = float(cell.get("value"))
+                else:
+                    val = cell.get("value")
+                row_dict[col_name] = val
+            out.append(row_dict)
+        return TursoCursor(
+            out,
+            lastrowid=int(last_insert_rowid) if last_insert_rowid is not None else None,
+            rowcount=affected_row_count
+        )
+
     def execute_batch(self, statements: List[str]) -> List[Any]:
         """Execute a list of DDL / SQL queries in an atomic pipeline batch."""
         requests_list = []
@@ -224,3 +279,81 @@ class TursoClient:
             "CREATE INDEX IF NOT EXISTS idx_turso_sessions ON sessions(user_id);"
         ]
         return self.execute_batch(schema_sqls)
+
+
+class TursoRow:
+    """Row wrapper that supports both dict-key and numeric-index access like sqlite3.Row."""
+    def __init__(self, data: Dict[str, Any]):
+        self._data = data
+        self._keys = list(data.keys())
+        self._values = list(data.values())
+
+    def __getitem__(self, key_or_idx: Any) -> Any:
+        if isinstance(key_or_idx, int):
+            return self._values[key_or_idx]
+        return self._data[key_or_idx]
+
+    def get(self, key: str, default: Any = None) -> Any:
+        return self._data.get(key, default)
+
+    def keys(self) -> List[str]:
+        return self._keys
+
+    def values(self) -> List[Any]:
+        return self._values
+
+    def items(self):
+        return self._data.items()
+
+    def __iter__(self):
+        return iter(self._data)
+
+    def __contains__(self, key: str) -> bool:
+        return key in self._data
+
+    def __repr__(self) -> str:
+        return f"<TursoRow {self._data}>"
+
+
+class TursoCursor:
+    """Async cursor wrapper providing fetchall(), fetchone(), and lastrowid."""
+    def __init__(self, raw_rows: List[Dict[str, Any]], lastrowid: Optional[int] = None, rowcount: int = 0):
+        self._raw_rows = raw_rows
+        self._idx = 0
+        self.lastrowid = lastrowid
+        self.rowcount = rowcount
+
+    async def fetchall(self) -> List[TursoRow]:
+        return [TursoRow(r) for r in self._raw_rows]
+
+    async def fetchone(self) -> Optional[TursoRow]:
+        if self._idx < len(self._raw_rows):
+            r = self._raw_rows[self._idx]
+            self._idx += 1
+            return TursoRow(r)
+        return None
+
+    def __iter__(self):
+        return (TursoRow(r) for r in self._raw_rows)
+
+
+class TursoConnection:
+    """Async connection adapter for FastAPI matching aiosqlite interface."""
+    def __init__(self, client: TursoClient):
+        self.client = client
+
+    async def execute(self, sql: str, params: Optional[Any] = None) -> TursoCursor:
+        param_list = None
+        if params is not None:
+            if isinstance(params, (tuple, list)):
+                param_list = list(params)
+            else:
+                param_list = [params]
+        return self.client.execute_raw(sql, param_list)
+
+    async def commit(self):
+        pass
+
+    async def close(self):
+        pass
+

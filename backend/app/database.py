@@ -2,19 +2,35 @@ import sqlite3
 import aiosqlite
 from pathlib import Path
 from typing import Optional
-from app.config import DB_PATH
+from app.config import DB_PATH, TURSO_DATABASE_URL, TURSO_AUTH_TOKEN
+from app.turso_client import TursoClient, TursoConnection
+
+_turso_client = None
+if TURSO_AUTH_TOKEN and TURSO_DATABASE_URL:
+    try:
+        _turso_client = TursoClient(TURSO_DATABASE_URL, TURSO_AUTH_TOKEN)
+        print(f"[Database] Active backend: Turso Cloud Database ({TURSO_DATABASE_URL})")
+    except Exception as e:
+        print(f"[Database] Notice: Turso initialization skipped ({e}); falling back to local SQLite.")
 
 def init_db_sync():
     """Synchronously initialize SQLite database tables and indexes."""
+    global _turso_client
+    if _turso_client:
+        try:
+            _turso_client.init_schema()
+            print("[Database] Remote Turso schema initialized.")
+        except Exception as e:
+            print(f"[Database] Notice: Turso schema check ({e})")
+
     db_file = Path(DB_PATH)
     try:
         db_file.parent.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
-    
-    try:
         conn = sqlite3.connect(str(db_file))
         cursor = conn.cursor()
+    except Exception as e:
+        print(f"[Database] Notice: Local SQLite file connection skipped ({e})")
+        return
     
     # 1. Repositories table
     cursor.execute("""
@@ -166,7 +182,12 @@ def init_db_sync():
         print(f"[Database] Notice during schema sync: {e}")
 
 async def get_db_connection():
-    """Async connection generator for FastAPI dependencies."""
+    """Async connection generator for FastAPI dependencies. Uses Turso if configured, else local SQLite."""
+    global _turso_client
+    if _turso_client:
+        yield TursoConnection(_turso_client)
+        return
+
     conn = await aiosqlite.connect(DB_PATH)
     conn.row_factory = aiosqlite.Row
     try:

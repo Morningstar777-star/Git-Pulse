@@ -1,7 +1,8 @@
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
 from app.database import get_db_connection
+from app.auth import get_current_user_optional
 from app.models.schemas import RepositoryBase, BenchmarkReport, ModelBenchmarkResult
 from app.routes.repositories import list_repositories
 from app.models.evaluate import run_experiment_evaluation
@@ -16,6 +17,7 @@ async def get_momentum_radar(
     time_window: str = Query("7d", pattern="^(24h|7d|30d)$"),
     page: int = Query(1, ge=1),
     limit: int = Query(30, ge=5, le=300),
+    user: Optional[dict] = Depends(get_current_user_optional),
     db=Depends(get_db_connection)
 ):
     """
@@ -27,6 +29,7 @@ async def get_momentum_radar(
         time_window=time_window,
         page=page,
         page_size=limit,
+        user=user,
         db=db
     )
     return items
