@@ -1,13 +1,20 @@
+import time
 import json
+import math
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query
 from app.database import get_db_connection
 from app.auth import get_current_user_optional
 from app.models.schemas import TopicCategory, TopicItem
 from app.seed_data import TOPICS_METADATA
-from app.routes.repositories import list_repositories
+from app.routes.repositories import row_to_repo_dict
 
 router = APIRouter(prefix="/api/topics", tags=["Topics"])
+
+# In-memory TTL cache for high-speed response
+_TOPICS_CACHE = {}
+_TOPICS_CACHE_TIMESTAMP = {}
+CACHE_TTL_SECONDS = 90
 
 @router.get("", response_model=List[TopicCategory])
 async def get_topics_overview(
@@ -21,10 +28,26 @@ async def get_topics_overview(
     Returns high-level curated categories for top tabs, populated with
     repositories ordered by the selected mode (BKM momentum or Popularity stars)
     and selected time window (24h daily, 7d weekly, 30d monthly).
+    Optimized with single-batch queries and in-memory caching.
     """
-    import asyncio
+    user_id = user["id"] if user and isinstance(user, dict) else None
+    cache_key = f"{mode}:{time_window}:{limit_per_topic}:{user_id}"
+    now = time.time()
 
-    # Single high-speed GROUP BY query for all category stats
+    if cache_key in _TOPICS_CACHE and (now - _TOPICS_CACHE_TIMESTAMP.get(cache_key, 0)) < CACHE_TTL_SECONDS:
+        return _TOPICS_CACHE[cache_key]
+
+    # 1. Fetch user watchlist IDs if signed in
+    saved_ids = set()
+    if user_id:
+        try:
+            saved_cursor = await db.execute("SELECT repo_id FROM user_watchlist WHERE user_id = ?;", (user_id,))
+            saved_rows = await saved_cursor.fetchall()
+            saved_ids = {r[0] for r in saved_rows}
+        except Exception:
+            pass
+
+    # 2. Single high-speed GROUP BY query for all category stats
     stats_cursor = await db.execute("""
         SELECT 
             category_id,
@@ -37,36 +60,74 @@ async def get_topics_overview(
     stats_rows = await stats_cursor.fetchall()
     stats_by_cat = {r["category_id"]: r for r in stats_rows}
 
-    # Parallel asynchronous fetch of top repositories across categories
-    async def fetch_cat_repos(cat_id: str):
-        return await list_repositories(
-            mode=mode,
-            time_window=time_window,
-            category_id=cat_id,
-            page=1,
-            page_size=limit_per_topic,
-            user=user,
-            db=db
+    # 3. Single query to fetch categorized repositories ordered for fast selection
+    order_clause = "ORDER BY stars DESC" if mode == "popularity" else "ORDER BY is_emerging DESC, stars DESC"
+    all_repos_cursor = await db.execute(f"SELECT * FROM repositories WHERE category_id IS NOT NULL {order_clause};")
+    all_repos_rows = await all_repos_cursor.fetchall()
+
+    # Group candidate repos by category
+    candidate_repos_by_cat = {}
+    selected_repo_ids = []
+    fetch_buffer = min(50, limit_per_topic + 15)
+
+    for r in all_repos_rows:
+        cid = r["category_id"]
+        if cid not in candidate_repos_by_cat:
+            candidate_repos_by_cat[cid] = []
+        if len(candidate_repos_by_cat[cid]) < fetch_buffer:
+            candidate_repos_by_cat[cid].append(r)
+            selected_repo_ids.append(r["id"])
+
+    # 4. Single batch query for snapshots of all candidate repositories
+    snapshots_by_repo = {}
+    if selected_repo_ids:
+        placeholders = ",".join("?" for _ in selected_repo_ids)
+        snap_cursor = await db.execute(
+            f"SELECT * FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
+            selected_repo_ids
         )
+        snap_rows = await snap_cursor.fetchall()
+        for sr in snap_rows:
+            rid = sr["repo_id"]
+            if rid not in snapshots_by_repo:
+                snapshots_by_repo[rid] = []
+            snapshots_by_repo[rid].append(sr)
 
-    tasks = [fetch_cat_repos(meta["id"]) for meta in TOPICS_METADATA]
-    all_top_repos = await asyncio.gather(*tasks)
-
+    # 5. Enrich and sort repositories per category
     topics_out = []
-    for idx, topic_meta in enumerate(TOPICS_METADATA):
+    for topic_meta in TOPICS_METADATA:
         cat_id = topic_meta["id"]
         stats = stats_by_cat.get(cat_id, {})
-        top_repos = all_top_repos[idx]
+        raw_candidates = candidate_repos_by_cat.get(cat_id, [])
+
+        cat_items = []
+        for r in raw_candidates:
+            snaps = snapshots_by_repo.get(r["id"], [])
+            is_saved = r["id"] in saved_ids
+            item = row_to_repo_dict(r, snapshots=snaps, is_saved=is_saved)
+            cat_items.append(item)
+
+        # Sort based on mode
+        if mode == "popularity":
+            cat_items.sort(key=lambda x: x["stars"], reverse=True)
+        else:
+            cat_items.sort(key=lambda x: (x.get("is_emerging", False), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
+
+        top_repos = cat_items[:limit_per_topic]
 
         topics_out.append(TopicCategory(
             id=cat_id,
             name=topic_meta["name"],
             description=topic_meta["description"],
-            repository_count=stats.get("repo_count", 0),
-            total_stars=stats.get("total_stars", 0),
-            emerging_count=stats.get("emerging_count", 0),
+            repository_count=stats.get("repo_count", len(cat_items)),
+            total_stars=stats.get("total_stars", sum(x["stars"] for x in cat_items)),
+            emerging_count=stats.get("emerging_count", sum(1 for x in cat_items if x.get("is_emerging"))),
             top_repositories=top_repos
         ))
+
+    # Save to in-memory cache
+    _TOPICS_CACHE[cache_key] = topics_out
+    _TOPICS_CACHE_TIMESTAMP[cache_key] = now
 
     return topics_out
 
