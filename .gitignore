@@ -38,3 +38,4 @@ $RECYCLE.BIN/
 
 # Tunnel Binaries
 cloudflared.exe
+ngrok.exe

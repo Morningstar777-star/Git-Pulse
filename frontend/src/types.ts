@@ -79,3 +79,15 @@ export interface SystemStatus {
 export type SortMode = 'momentum' | 'popularity';
 export type TimeWindow = '24h' | '7d' | '30d';
 export type PopularitySortBy = 'stars' | 'forks';
+
+export interface User {
+  id: number;
+  email: string;
+  name: string;
+  created_at: string;
+}
+
+export interface AuthResponse {
+  token: string;
+  user: User;
+}

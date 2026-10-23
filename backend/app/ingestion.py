@@ -4,6 +4,14 @@ Aggregates live trending repositories, daily/weekly/monthly breakout tables,
 and topic directories covering 900+ topics from GitPulse and GitHub.
 """
 
+import sys
+from pathlib import Path
+
+# Ensure backend root is on sys.path regardless of execution directory
+_backend_root = Path(__file__).resolve().parent.parent
+if str(_backend_root) not in sys.path:
+    sys.path.insert(0, str(_backend_root))
+
 import ssl
 import certifi
 import urllib.request

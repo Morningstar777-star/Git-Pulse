@@ -11,6 +11,7 @@ from app.models.smart_momentum import calculate_smart_momentum
 from app.github_client import github_client
 from app.search_engine import parse_search_intent, score_repository_relevance
 from app.translator import translate_cjk_sync
+from app.auth import get_current_user_optional
 
 router = APIRouter(prefix="/api/repositories", tags=["Repositories"])
 
@@ -148,6 +149,7 @@ async def list_repositories(
     watchlist_only: bool = False,
     page: int = Query(1, ge=1),
     page_size: int = Query(50, ge=1, le=500),
+    user: Optional[dict] = Depends(get_current_user_optional),
     db=Depends(get_db_connection)
 ):
     """
@@ -155,10 +157,12 @@ async def list_repositories(
     table column header sorting (1D, 7D, 30D, Stars, Per Day), topic tag filtering,
     language tags, live on-demand GitHub search, and infinite-scroll pagination.
     """
-    # Fetch watchlist repo IDs
-    saved_cursor = await db.execute("SELECT repo_id FROM watchlist;")
-    saved_rows = await saved_cursor.fetchall()
-    saved_ids = {r[0] for r in saved_rows}
+    # Fetch watchlist repo IDs for authenticated user (empty if unauthenticated)
+    saved_ids = set()
+    if user:
+        saved_cursor = await db.execute("SELECT repo_id FROM user_watchlist WHERE user_id = ?;", (user["id"],))
+        saved_rows = await saved_cursor.fetchall()
+        saved_ids = {r[0] for r in saved_rows}
 
     # Base query
     query = "SELECT * FROM repositories WHERE 1=1"
@@ -315,16 +319,25 @@ async def list_repositories(
     return items[start:end]
 
 @router.get("/{repo_id}", response_model=RepositoryDetail)
-async def get_repository_detail(repo_id: int, db=Depends(get_db_connection)):
+async def get_repository_detail(
+    repo_id: int,
+    user: Optional[dict] = Depends(get_current_user_optional),
+    db=Depends(get_db_connection)
+):
     """Fetch full repository details with chronological snapshots and related tools."""
     cursor = await db.execute("SELECT * FROM repositories WHERE id = ?;", (repo_id,))
     row = await cursor.fetchone()
     if not row:
         raise HTTPException(status_code=404, detail="Repository not found.")
 
-    # Check watchlist
-    saved_cursor = await db.execute("SELECT 1 FROM watchlist WHERE repo_id = ?;", (repo_id,))
-    is_saved = bool(await saved_cursor.fetchone())
+    # Check watchlist for authenticated user
+    is_saved = False
+    if user:
+        saved_cursor = await db.execute(
+            "SELECT 1 FROM user_watchlist WHERE user_id = ? AND repo_id = ?;",
+            (user["id"], repo_id)
+        )
+        is_saved = bool(await saved_cursor.fetchone())
 
     # Snapshots
     snap_cursor = await db.execute("SELECT * FROM snapshots WHERE repo_id = ? ORDER BY timestamp ASC;", (repo_id,))

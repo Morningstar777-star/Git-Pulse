@@ -7,3 +7,4 @@ numpy>=1.26.0
 scikit-learn>=1.4.0
 python-dotenv>=1.0.1
 requests>=2.31.0
+certifi>=2024.2.2

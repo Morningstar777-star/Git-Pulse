@@ -7,10 +7,14 @@ from app.config import DB_PATH
 def init_db_sync():
     """Synchronously initialize SQLite database tables and indexes."""
     db_file = Path(DB_PATH)
-    db_file.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        db_file.parent.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
     
-    conn = sqlite3.connect(str(db_file))
-    cursor = conn.cursor()
+    try:
+        conn = sqlite3.connect(str(db_file))
+        cursor = conn.cursor()
     
     # 1. Repositories table
     cursor.execute("""
@@ -98,6 +102,45 @@ def init_db_sync():
     );
     """)
 
+    # 7. User Accounts (Optional Sign-In & Bookmarks)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        name TEXT NOT NULL,
+        reset_token TEXT,
+        reset_code TEXT,
+        reset_expires_at TEXT,
+        created_at TEXT NOT NULL
+    );
+    """)
+
+    # 8. User Auth Sessions
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS sessions (
+        token TEXT PRIMARY KEY,
+        user_id INTEGER NOT NULL,
+        created_at TEXT NOT NULL,
+        expires_at TEXT NOT NULL,
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+    """)
+
+    # 9. Per-User Watchlist / Bookmarks
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS user_watchlist (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        repo_id INTEGER NOT NULL,
+        added_at TEXT NOT NULL,
+        notes TEXT,
+        UNIQUE(user_id, repo_id),
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (repo_id) REFERENCES repositories(id) ON DELETE CASCADE
+    );
+    """)
+
     # Migration: Ensure description_en column exists on repositories
     cursor.execute("PRAGMA table_info(repositories);")
     columns = [col[1] for col in cursor.fetchall()]
@@ -110,9 +153,17 @@ def init_db_sync():
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_lang ON repositories(language);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_repos_name ON repositories(name);")
     cursor.execute("CREATE INDEX IF NOT EXISTS idx_snapshots_repo ON snapshots(repo_id, timestamp);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_user_watchlist ON user_watchlist(user_id, repo_id);")
+    cursor.execute("CREATE INDEX IF NOT EXISTS idx_sessions_user ON sessions(user_id);")
     
-    conn.commit()
-    conn.close()
+    try:
+        conn.commit()
+        conn.close()
+    except sqlite3.OperationalError as e:
+        print(f"[Database] Notice: SQLite schema sync skipped ({e}). Operating in read-only mode.")
+    except Exception as e:
+        print(f"[Database] Notice during schema sync: {e}")
 
 async def get_db_connection():
     """Async connection generator for FastAPI dependencies."""

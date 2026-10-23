@@ -4,6 +4,7 @@ import { SidebarRadar } from './components/SidebarRadar';
 import { TopicExplorer } from './components/TopicExplorer';
 import { RepositoryModal } from './components/RepositoryModal';
 import { TopicsModal } from './components/TopicsModal';
+import { AuthModal } from './components/AuthModal';
 import { 
   fetchRepositories, 
   fetchMomentumRadar, 
@@ -11,7 +12,9 @@ import {
   fetchWatchlist, 
   toggleWatchlist, 
   fetchSystemStatus, 
-  triggerRefresh 
+  triggerRefresh,
+  fetchMe,
+  signOut
 } from './services/api';
 import { 
   Repository, 
@@ -19,7 +22,8 @@ import {
   SystemStatus, 
   SortMode, 
   TimeWindow, 
-  PopularitySortBy 
+  PopularitySortBy,
+  User
 } from './types';
 
 export const App: React.FC = () => {
@@ -45,7 +49,10 @@ export const App: React.FC = () => {
   const [watchlist, setWatchlist] = useState<Repository[]>([]);
   const [systemStatus, setSystemStatus] = useState<SystemStatus | null>(null);
 
-  // Modals
+  // Modals & User Auth State
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [authModalReason, setAuthModalReason] = useState<string | null>(null);
   const [selectedRepository, setSelectedRepository] = useState<Repository | null>(null);
   const [isTopicsModalOpen, setIsTopicsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,15 +68,22 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Load Initial Metadata
+  // Load Initial Metadata & User Session
   const loadInitialData = useCallback(async () => {
     try {
-      const [watchlistData, statusData] = await Promise.all([
-        fetchWatchlist(),
+      const [currentUser, statusData] = await Promise.all([
+        fetchMe(),
         fetchSystemStatus()
       ]);
-      setWatchlist(watchlistData);
+      setUser(currentUser);
       setSystemStatus(statusData);
+
+      if (currentUser) {
+        const watchlistData = await fetchWatchlist();
+        setWatchlist(watchlistData);
+      } else {
+        setWatchlist([]);
+      }
     } catch (err) {
       console.error("Failed to load initial metadata:", err);
     }
@@ -162,6 +176,12 @@ export const App: React.FC = () => {
 
   // Watchlist Toggle
   const handleToggleWatchlist = async (repoId: number) => {
+    if (!user) {
+      setAuthModalReason("Sign in to save repositories to your personal watchlist.");
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     try {
       const res = await toggleWatchlist(repoId);
       
@@ -187,6 +207,52 @@ export const App: React.FC = () => {
       setWatchlist(updatedWatchlist);
     } catch (err) {
       console.error("Failed to toggle watchlist:", err);
+    }
+  };
+
+  // Auth Handlers
+  const handleSignOut = async () => {
+    await signOut();
+    setUser(null);
+    setWatchlist([]);
+    setRepositories((prev) => prev.map((r) => ({ ...r, is_saved: false })));
+    setRadarRepositories((prev) => prev.map((r) => ({ ...r, is_saved: false })));
+    setTopics((prev) =>
+      prev.map((cat) => ({
+        ...cat,
+        top_repositories: (cat.top_repositories || []).map((r) => ({ ...r, is_saved: false }))
+      }))
+    );
+    if (isWatchlistView) {
+      setIsWatchlistView(false);
+    }
+  };
+
+  const handleAuthSuccess = async (authenticatedUser: User) => {
+    setUser(authenticatedUser);
+    setIsAuthModalOpen(false);
+    setAuthModalReason(null);
+    try {
+      const watchlistData = await fetchWatchlist();
+      setWatchlist(watchlistData);
+      const savedIds = new Set(watchlistData.map((r) => r.id));
+      setRepositories((prev) =>
+        prev.map((r) => ({ ...r, is_saved: savedIds.has(r.id) }))
+      );
+      setRadarRepositories((prev) =>
+        prev.map((r) => ({ ...r, is_saved: savedIds.has(r.id) }))
+      );
+      setTopics((prev) =>
+        prev.map((cat) => ({
+          ...cat,
+          top_repositories: (cat.top_repositories || []).map((r) => ({
+            ...r,
+            is_saved: savedIds.has(r.id)
+          }))
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to refresh watchlist after auth:", err);
     }
   };
 
@@ -220,11 +286,24 @@ export const App: React.FC = () => {
         onPopularitySortChange={setPopularitySortBy}
         watchlistCount={watchlist.length}
         isWatchlistActive={isWatchlistView}
-        onToggleWatchlistView={() => setIsWatchlistView(!isWatchlistView)}
+        onToggleWatchlistView={() => {
+          if (!user && !isWatchlistView) {
+            setAuthModalReason("Sign in to access and manage your personal saved watchlist.");
+            setIsAuthModalOpen(true);
+            return;
+          }
+          setIsWatchlistView(!isWatchlistView);
+        }}
         onOpenTopicsModal={() => setIsTopicsModalOpen(true)}
         totalTopicsCount={systemStatus?.total_topics || 904}
         systemStatus={systemStatus}
         onTriggerRefresh={handleTriggerRefresh}
+        user={user}
+        onOpenAuthModal={() => {
+          setAuthModalReason(null);
+          setIsAuthModalOpen(true);
+        }}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Cockpit Split Layout: Left/Center Main Explorer + Right Side Momentum Radar */}
@@ -295,6 +374,17 @@ export const App: React.FC = () => {
           setActiveTopic(topic);
           setActiveCategoryId(null);
         }}
+      />
+
+      {/* User Authentication & Password Recovery Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => {
+          setIsAuthModalOpen(false);
+          setAuthModalReason(null);
+        }}
+        onAuthSuccess={handleAuthSuccess}
+        reason={authModalReason}
       />
 
     </div>

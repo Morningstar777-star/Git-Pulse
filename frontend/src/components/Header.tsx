@@ -6,9 +6,11 @@ import {
   RefreshCw, 
   Bookmark, 
   Clock, 
-  Hash
+  Hash,
+  User as UserIcon,
+  LogOut
 } from 'lucide-react';
-import { SortMode, TimeWindow, PopularitySortBy, SystemStatus } from '../types';
+import { SortMode, TimeWindow, PopularitySortBy, SystemStatus, User } from '../types';
 import { ThemeToggle } from './ThemeToggle';
 
 interface HeaderProps {
@@ -27,6 +29,9 @@ interface HeaderProps {
   totalTopicsCount: number;
   systemStatus: SystemStatus | null;
   onTriggerRefresh: () => void;
+  user: User | null;
+  onOpenAuthModal: () => void;
+  onSignOut: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -44,7 +49,10 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenTopicsModal,
   totalTopicsCount,
   systemStatus,
-  onTriggerRefresh
+  onTriggerRefresh,
+  user,
+  onOpenAuthModal,
+  onSignOut
 }) => {
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -247,6 +255,38 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             )}
           </button>
+
+          {/* Optional User Auth / Profile Badge */}
+          {user ? (
+            <div className="flex items-center gap-1.5 pl-1 border-l border-slate-200 dark:border-[#30363d]">
+              <div 
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-900/60 text-xs font-mono text-blue-700 dark:text-cyan-300"
+                title={`Signed in as ${user.email}`}
+              >
+                <div className="w-4 h-4 rounded-full bg-blue-600 text-white font-bold text-[9px] flex items-center justify-center">
+                  {(user.name[0] || 'U').toUpperCase()}
+                </div>
+                <span className="font-semibold max-w-[100px] truncate">{user.name}</span>
+              </div>
+              <button
+                onClick={onSignOut}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-slate-100 dark:hover:bg-[#21262d] transition-colors"
+                title="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuthModal}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono font-medium bg-slate-100 hover:bg-slate-200/80 dark:bg-[#161b22] dark:hover:bg-[#21262d] border border-slate-200 dark:border-[#30363d] text-slate-700 dark:text-slate-300 transition-all shadow-sm"
+              title="Sign in (optional) to save personal bookmarks"
+            >
+              <UserIcon className="w-3.5 h-3.5 text-blue-500" />
+              <span>Sign In</span>
+              <span className="text-[10px] text-slate-400 hidden sm:inline">(Optional)</span>
+            </button>
+          )}
 
           {/* Jhey Tompkins Night && Day Theme Toggle Switch (☀️ / 🌙) */}
           <ThemeToggle />

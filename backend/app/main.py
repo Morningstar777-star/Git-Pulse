@@ -24,7 +24,7 @@ from app.config import FRONTEND_DIST_DIR
 from app.database import init_db_sync, get_sync_connection
 from app.seed_data import seed_database_if_empty
 from app.scheduler import scheduler
-from app.routes import repositories, momentum, topics, watchlist, status
+from app.routes import repositories, momentum, topics, watchlist, status, auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -81,6 +81,7 @@ app.include_router(momentum.router)
 app.include_router(topics.router)
 app.include_router(watchlist.router)
 app.include_router(status.router)
+app.include_router(auth.router)
 
 # Serve built frontend static files if present
 if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
