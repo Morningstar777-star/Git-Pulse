@@ -28,23 +28,27 @@ from app.routes import repositories, momentum, topics, watchlist, status, auth
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. Startup: Initialize SQLite DB schema
-    print("[GitPulse] Initializing local SQLite database...")
-    init_db_sync()
-    
-    # 2. Seed baseline dataset if empty
-    with get_sync_connection() as conn:
-        count = seed_database_if_empty(conn)
-        print(f"[GitPulse] Database ready. Active repositories: {count}")
-
-    # 3. Start background crawler scheduler
-    await scheduler.start()
+    # If running locally, initialize SQLite and run background scheduler
+    if not os.getenv("VERCEL"):
+        print("[GitPulse] Initializing local database & scheduler...")
+        init_db_sync()
+        try:
+            conn = get_sync_connection()
+            count = seed_database_if_empty(conn)
+            conn.close()
+            print(f"[GitPulse] Database ready. Active repositories: {count}")
+        except Exception as e:
+            print(f"[GitPulse] Seeding note: {e}")
+        await scheduler.start()
+    else:
+        # On Vercel serverless, verify schema on remote cloud database
+        init_db_sync()
 
     yield
 
-    # 4. Shutdown: Cancel scheduler
-    print("[GitPulse] Shutting down scheduler...")
-    await scheduler.stop()
+    if not os.getenv("VERCEL"):
+        print("[GitPulse] Shutting down scheduler...")
+        await scheduler.stop()
 
 app = FastAPI(
     title="GitPulse Explorer API",
