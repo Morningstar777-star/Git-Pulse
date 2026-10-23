@@ -143,8 +143,8 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
 
-        {/* Global Live Intelligence Search Bar - expands dynamically to available width */}
-        <div className="relative flex-1 min-w-[140px] max-w-xs md:max-w-sm lg:max-w-md mx-1 lg:mx-2">
+        {/* Global Live Intelligence Search Bar - expanded wider */}
+        <div className="relative flex-1 min-w-[180px] max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl mx-2 lg:mx-3">
           <div className="relative flex items-center">
             <Search className="absolute left-3 w-4 h-4 text-slate-400 pointer-events-none" />
             <input
@@ -152,7 +152,7 @@ export const Header: React.FC<HeaderProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Search repositories, topics... ('/')"
+              placeholder="Search repositories, topics, languages... ('/')"
               className="w-full pl-9 pr-10 py-1.5 rounded-xl bg-slate-100 dark:bg-[#161b22] border border-slate-200 dark:border-[#30363d] text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 dark:focus:border-blue-500 transition-all"
             />
             {searchQuery ? (
