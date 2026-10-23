@@ -2,14 +2,24 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
+  "functions": {
+    "api/index.py": {
+      "includeFiles": "frontend/dist/**",
+      "maxDuration": 30
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.py?__path=$1"
     },
     {
-      "source": "/((?!assets/|.*\\..*).*)",
-      "destination": "/index.html"
+      "source": "/assets/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/api/index.py"
     }
   ],
   "env": {

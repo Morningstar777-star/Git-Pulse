@@ -45,7 +45,7 @@ class VercelPathMiddleware(BaseHTTPMiddleware):
             if after:
                 path = "/api/" + after if not after.startswith("api/") else "/" + after
             else:
-                path = "/api"
+                path = "/"
 
         if path and not path.endswith("index.py"):
             request.scope["path"] = path

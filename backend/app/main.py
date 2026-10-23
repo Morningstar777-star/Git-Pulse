@@ -90,8 +90,8 @@ app.include_router(watchlist.router)
 app.include_router(status.router)
 app.include_router(auth.router)
 
-# Serve built frontend static files locally (On Vercel, static files are served by Vercel CDN)
-if not os.getenv("VERCEL") and FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
+# Serve built frontend static files if present (supports local server and bundled serverless)
+if FRONTEND_DIST_DIR.exists() and (FRONTEND_DIST_DIR / "index.html").exists():
     app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST_DIR / "assets")), name="assets")
 
     @app.get("/{full_path:path}")
