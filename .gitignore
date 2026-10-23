@@ -35,3 +35,6 @@ $RECYCLE.BIN/
 # Temporary SQLite logs
 *.db-journal
 *.db-wal
+
+# Tunnel Binaries
+cloudflared.exe
