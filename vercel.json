@@ -14,12 +14,8 @@
       "destination": "/api/index.py?__path=$1"
     },
     {
-      "source": "/assets/(.*)",
-      "destination": "/api/index.py"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/api/index.py"
+      "source": "/((?!api/|assets/|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ],
   "env": {
