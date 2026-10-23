@@ -500,7 +500,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
   });
 
   return (
-    <main className="flex-1 overflow-y-auto px-4 lg:px-8 py-6 space-y-8">
+    <main className="flex-1 overflow-y-auto pl-4 lg:pl-6 pr-0 py-6 space-y-8">
       
       {/* Topic Rows */}
       {topicSections.map(({ category, repositories: sectionRepos }) => {
@@ -519,7 +519,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
       })}
 
       {/* General Infinite Scroll Stream of Emerging Breakouts */}
-      <div className="pt-4 border-t border-slate-200 dark:border-[#30363d] space-y-4">
+      <div className="pt-4 border-t border-slate-200 dark:border-[#30363d] space-y-4 pr-4 lg:pr-6">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -600,7 +600,7 @@ const TopicScrollSection: React.FC<TopicScrollSectionProps> = ({
   return (
     <div className="space-y-3 group/section">
       {/* Section Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pr-4 lg:pr-6">
         <div className="flex items-center gap-2.5">
           <h2 className="text-base font-bold text-slate-900 dark:text-white tracking-tight">
             {category.name}
