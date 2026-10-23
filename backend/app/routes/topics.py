@@ -14,13 +14,13 @@ router = APIRouter(prefix="/api/topics", tags=["Topics"])
 # In-memory TTL cache for high-speed response
 _TOPICS_CACHE = {}
 _TOPICS_CACHE_TIMESTAMP = {}
-CACHE_TTL_SECONDS = 90
+CACHE_TTL_SECONDS = 600  # 10 minutes cache for instant lightning responses
 
 @router.get("", response_model=List[TopicCategory])
 async def get_topics_overview(
     mode: str = Query("momentum", pattern="^(momentum|popularity)$"),
     time_window: str = Query("7d", pattern="^(24h|7d|30d)$"),
-    limit_per_topic: int = Query(30, ge=4, le=100),
+    limit_per_topic: int = Query(20, ge=4, le=60),
     user: Optional[dict] = Depends(get_current_user_optional),
     db=Depends(get_db_connection)
 ):
@@ -65,10 +65,10 @@ async def get_topics_overview(
     all_repos_cursor = await db.execute(f"SELECT * FROM repositories WHERE category_id IS NOT NULL {order_clause};")
     all_repos_rows = await all_repos_cursor.fetchall()
 
-    # Group candidate repos by category
+    # Group candidate repos by category (exact limit needed)
     candidate_repos_by_cat = {}
     selected_repo_ids = []
-    fetch_buffer = min(50, limit_per_topic + 15)
+    fetch_buffer = limit_per_topic + (0 if mode == "popularity" else 5)
 
     for r in all_repos_rows:
         cid = r["category_id"]
@@ -78,12 +78,12 @@ async def get_topics_overview(
             candidate_repos_by_cat[cid].append(r)
             selected_repo_ids.append(r["id"])
 
-    # 4. Single batch query for snapshots of all candidate repositories
+    # 4. Streamlined batch query for snapshots of candidate repositories
     snapshots_by_repo = {}
     if selected_repo_ids:
         placeholders = ",".join("?" for _ in selected_repo_ids)
         snap_cursor = await db.execute(
-            f"SELECT * FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
+            f"SELECT repo_id, stars, delta_stars_24h, delta_stars_7d, delta_stars_30d FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
             selected_repo_ids
         )
         snap_rows = await snap_cursor.fetchall()

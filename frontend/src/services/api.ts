@@ -185,7 +185,7 @@ export async function fetchMomentumRadar(
 export async function fetchTopics(
   mode: SortMode = 'momentum', 
   timeWindow: TimeWindow = '7d', 
-  limitPerTopic: number = 30
+  limitPerTopic: number = 20
 ): Promise<TopicCategory[]> {
   const res = await fetch(`${API_BASE}/topics?mode=${mode}&time_window=${timeWindow}&limit_per_topic=${limitPerTopic}`, {
     headers: getAuthHeaders()

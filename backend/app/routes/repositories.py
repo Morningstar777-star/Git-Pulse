@@ -255,8 +255,28 @@ async def list_repositories(
 
     is_desc = (sort_order == "desc")
 
-    # Column / Custom Header Sorting
-    if sort_by in ("stars", "stars_count"):
+    # Priority 1: When user is actively searching, Semantic Intent Relevance is ALWAYS paramount
+    if intent:
+        # Score each item with smart semantic relevance
+        for it in items:
+            it["_relevance_score"] = score_repository_relevance(it, intent)
+
+        # Filter out items with 0 relevance if we have positive matches
+        pos_matches = [it for it in items if it.get("_relevance_score", 0) > 0]
+        if pos_matches:
+            items = pos_matches
+
+        if sort_by in ("stars", "stars_count"):
+            items.sort(key=lambda x: (x.get("_relevance_score", 0), x["stars"]), reverse=True)
+        elif sort_by in ("forks", "forks_count"):
+            items.sort(key=lambda x: (x.get("_relevance_score", 0), x["forks"]), reverse=True)
+        elif mode == "popularity":
+            items.sort(key=lambda x: (x.get("_relevance_score", 0), x["stars"]), reverse=True)
+        else:
+            items.sort(key=lambda x: (x.get("_relevance_score", 0), x.get("momentum_score", 0), x.get("growth_7d_pct", 0)), reverse=True)
+
+    # Priority 2: Custom Column / Header Sorting (when not searching)
+    elif sort_by in ("stars", "stars_count"):
         items.sort(key=lambda x: x["stars"], reverse=is_desc)
     elif sort_by in ("forks", "forks_count"):
         items.sort(key=lambda x: x["forks"], reverse=is_desc)
@@ -273,22 +293,7 @@ async def list_repositories(
     elif sort_by in ("repository", "name"):
         items.sort(key=lambda x: x["name"].lower(), reverse=is_desc)
     else:
-        # Default Mode Sorting
-        if intent:
-            # Score each item with smart semantic relevance
-            for it in items:
-                it["_relevance_score"] = score_repository_relevance(it, intent)
-
-            # Filter out items with 0 relevance if we have positive matches
-            pos_matches = [it for it in items if it.get("_relevance_score", 0) > 0]
-            if pos_matches:
-                items = pos_matches
-
-            if mode == "popularity":
-                items.sort(key=lambda x: (x.get("_relevance_score", 0), x["stars"]), reverse=True)
-            else:
-                items.sort(key=lambda x: (x.get("_relevance_score", 0), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
-        else:
+        # Default Mode Sorting (when not searching)
             if mode == "popularity":
                 # Surface high-star breakout projects with active velocity (like rea, NOT stale +1/day dinosaurs like tensorflow)
                 def calc_popularity_score(x):

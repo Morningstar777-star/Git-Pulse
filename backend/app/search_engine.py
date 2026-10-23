@@ -136,7 +136,8 @@ def parse_search_intent(query_str: str) -> Dict[str, Any]:
 def score_repository_relevance(repo: Dict[str, Any], intent: Dict[str, Any]) -> float:
     """
     Calculates semantic relevance score (0 - 1000+) for a repository
-    given the parsed search intent.
+    given the parsed search intent. Prioritizes exact phrase matching,
+    keyword coverage, and user intent.
     """
     clean_query = intent["clean_query"].lower()
     keywords = intent["meaningful_keywords"]
@@ -152,44 +153,52 @@ def score_repository_relevance(repo: Dict[str, Any], intent: Dict[str, Any]) -> 
 
     score = 0.0
 
-    # 1. Exact match on repo name or full_name
+    # 1. Exact phrase matching (HUGE priority)
     if clean_query == name_lower:
-        score += 300.0
+        score += 500.0
     elif clean_query == full_name_lower:
-        score += 350.0
+        score += 550.0
     elif clean_query in full_name_lower:
-        score += 180.0
+        score += 350.0
     elif clean_query in name_lower:
-        score += 150.0
+        score += 300.0
+
+    if clean_query in topics_text:
+        score += 400.0
+    elif any(clean_query == t for t in topics_list):
+        score += 450.0
+
+    if clean_query in desc_lower or (desc_en_lower and clean_query in desc_en_lower):
+        score += 350.0
 
     # 2. Meaningful keywords matching
     matched_keyword_count = 0
     for kw in keywords:
         kw_matched = False
         if kw == name_lower:
-            score += 120.0
+            score += 150.0
             kw_matched = True
         elif kw in name_lower:
-            score += 70.0
+            score += 90.0
             kw_matched = True
 
         if kw in full_name_lower:
-            score += 50.0
+            score += 70.0
             kw_matched = True
 
         if kw in topics_list:
-            score += 80.0
+            score += 100.0
             kw_matched = True
         elif any(kw in t for t in topics_list):
-            score += 50.0
+            score += 60.0
             kw_matched = True
 
         # Check in English description or translated description
         if desc_en_lower and kw in desc_en_lower:
-            score += 45.0
+            score += 60.0
             kw_matched = True
         elif kw in desc_lower:
-            score += 35.0
+            score += 50.0
             kw_matched = True
 
         if kw_matched:
@@ -198,18 +207,28 @@ def score_repository_relevance(repo: Dict[str, Any], intent: Dict[str, Any]) -> 
     # Ratio of matched keywords
     if keywords:
         keyword_coverage = matched_keyword_count / len(keywords)
-        score += keyword_coverage * 100.0
+        score += keyword_coverage * 150.0
+        # If ALL keywords match (e.g. both 'quantitative' AND 'finance')
+        if matched_keyword_count == len(keywords):
+            score += 250.0
 
-    # 3. Concept expansion matching
+    # Strict check: If user typed specific meaningful keywords and NONE matched
+    # (and the exact phrase didn't match), the repository is IRRELEVANT (score 0).
+    # Concept expansion should NEVER pull in repos that lack the user's actual keywords!
+    has_direct_match = (matched_keyword_count > 0) or (clean_query in full_name_lower) or (clean_query in desc_lower) or (clean_query in topics_text)
+    if not has_direct_match:
+        return 0.0
+
+    # 3. Concept expansion matching (only awarded to repos that have a direct keyword match)
     for term in expanded_terms:
         if term in topics_list:
-            score += 25.0
-        elif term in name_lower:
             score += 20.0
-        elif desc_en_lower and term in desc_en_lower:
+        elif term in name_lower:
             score += 15.0
-        elif term in desc_lower:
+        elif desc_en_lower and term in desc_en_lower:
             score += 10.0
+        elif term in desc_lower:
+            score += 8.0
 
     # 4. Multi-concept intersection bonus (e.g. user asked for "website" + "3d models")
     if intent["is_multi_concept"]:
@@ -225,12 +244,12 @@ def score_repository_relevance(repo: Dict[str, Any], intent: Dict[str, Any]) -> 
         elif len(concepts_hit) == 1:
             score = score * 1.2
 
-    # 5. Quality & Momentum blending (surface top-tier & breakout relevant projects)
+    # 5. Quality & Momentum blending (tie-breaker for top-tier projects)
     if score > 0:
         stars = max(1, repo.get("stars", 0))
         momentum = float(repo.get("momentum_score", 0.0) or 0.0)
-        stars_boost = min(25.0, math.log10(stars) * 4.0)
-        momentum_boost = momentum * 0.15
+        stars_boost = min(20.0, math.log10(stars) * 3.0)
+        momentum_boost = min(20.0, momentum * 0.1)
         score += stars_boost + momentum_boost
 
     return score

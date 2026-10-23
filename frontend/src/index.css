@@ -77,7 +77,7 @@ html.light ::-webkit-scrollbar-thumb:hover {
   --shadow-primary: rgba(0, 0, 0, 0.25);
   --shadow-highlight: rgba(255, 255, 255, 0.94);
   --halo-color: rgba(255, 255, 255, 0.1);
-  --transition-standard: 0.35s ease;
+  --transition-standard: 0.28s cubic-bezier(0.4, 0, 0.2, 1);
 
   font-size: var(--base-scale);
   background: none;
@@ -86,6 +86,15 @@ html.light ::-webkit-scrollbar-thumb:hover {
   cursor: pointer;
   display: inline-block;
   line-height: 1;
+}
+
+.theme-toggle__container,
+.theme-toggle__sun,
+.theme-toggle__moon-mask,
+.theme-toggle__stars,
+.theme-toggle__clouds {
+  will-change: transform;
+  backface-visibility: hidden;
 }
 
 .theme-toggle__container {

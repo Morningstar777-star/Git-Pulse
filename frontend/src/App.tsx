@@ -58,10 +58,22 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRadar, setIsLoadingRadar] = useState(false);
 
-  // Load Topics (Curated categories with 30 repos each, sorted by mode and timeframe)
+  // In-memory cache for instantaneous mode & timeframe switching (0ms latency)
+  const topicsCacheRef = React.useRef<Record<string, TopicCategory[]>>({});
+  const searchReqIdRef = React.useRef<number>(0);
+
+  // Load Topics (Curated categories with 20 repos each, sorted by mode and timeframe)
   const loadTopics = useCallback(async (currentMode: SortMode, currentTimeWindow: TimeWindow) => {
+    const cacheKey = `${currentMode}:${currentTimeWindow}`;
+    if (topicsCacheRef.current[cacheKey]) {
+      // Instant instantaneous switch from memory cache
+      setTopics(topicsCacheRef.current[cacheKey]);
+      return;
+    }
+
     try {
-      const topicsData = await fetchTopics(currentMode, currentTimeWindow, 30);
+      const topicsData = await fetchTopics(currentMode, currentTimeWindow, 20);
+      topicsCacheRef.current[cacheKey] = topicsData;
       setTopics(topicsData);
     } catch (err) {
       console.error("Failed to load topics:", err);
@@ -91,19 +103,28 @@ export const App: React.FC = () => {
 
   // Load Repositories for Main Content Area (Reset page to 1 on filter change)
   const loadRepositories = useCallback(async (pageToLoad: number = 1, append: boolean = false) => {
+    const thisReqId = ++searchReqIdRef.current;
     setIsLoading(true);
     try {
+      const trimmedSearch = searchQuery.trim();
+      const sortByParam = trimmedSearch
+        ? 'relevance'
+        : (mode === 'popularity' ? popularitySortBy : undefined);
+
       const reposData = await fetchRepositories({
         mode,
-        sort_by: popularitySortBy,
+        sort_by: sortByParam,
         time_window: timeWindow,
         category_id: activeCategoryId || undefined,
         topic: activeTopic || undefined,
-        search: searchQuery || undefined,
+        search: trimmedSearch || undefined,
         watchlist_only: isWatchlistView,
         page: pageToLoad,
         page_size: 40
       });
+
+      // Discard stale out-of-order response if user has typed or switched filters
+      if (thisReqId !== searchReqIdRef.current) return;
 
       if (append) {
         setRepositories((prev) => [...prev, ...reposData]);
@@ -112,9 +133,13 @@ export const App: React.FC = () => {
       }
       setHasMoreRepos(reposData.length >= 40);
     } catch (err) {
-      console.error("Failed to load repositories:", err);
+      if (thisReqId === searchReqIdRef.current) {
+        console.error("Failed to load repositories:", err);
+      }
     } finally {
-      setIsLoading(false);
+      if (thisReqId === searchReqIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [mode, popularitySortBy, timeWindow, activeCategoryId, activeTopic, searchQuery, isWatchlistView]);
 
@@ -146,14 +171,15 @@ export const App: React.FC = () => {
     loadTopics(mode, timeWindow);
   }, [mode, timeWindow, loadTopics]);
 
-  // Trigger main repo load on filter change
+  // Trigger main repo load on filter change (debounced for search typing)
   useEffect(() => {
     setRepoPage(1);
+    const delay = searchQuery.trim() ? 250 : 30;
     const timer = setTimeout(() => {
       loadRepositories(1, false);
-    }, 150);
+    }, delay);
     return () => clearTimeout(timer);
-  }, [loadRepositories]);
+  }, [loadRepositories, searchQuery]);
 
   // Trigger radar load on timeWindow change
   useEffect(() => {
@@ -272,7 +298,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-[#e6edf3] flex flex-col transition-colors duration-200">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0d1117] text-slate-900 dark:text-[#e6edf3] flex flex-col">
       
       {/* Top Global Navigation Bar */}
       <Header
