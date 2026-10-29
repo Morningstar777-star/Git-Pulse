@@ -27,6 +27,17 @@ interface RepositoryModalProps {
   onSelectTopic: (topic: string) => void;
 }
 
+function decodeHtml(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
 export const RepositoryModal: React.FC<RepositoryModalProps> = ({
   repository,
   onClose,
@@ -200,9 +211,11 @@ export const RepositoryModal: React.FC<RepositoryModalProps> = ({
         {/* Description & Native Translation Pill */}
         <div className="space-y-1.5">
           <p className="text-sm text-slate-700 dark:text-slate-300 font-sans leading-relaxed">
-            {Boolean(repo.description_en && repo.description_en !== repo.description)
-              ? (showOriginal ? repo.description : repo.description_en)
-              : (repo.description || "No description provided for this repository.")}
+            {decodeHtml(
+              Boolean(repo.description_en && repo.description_en !== repo.description)
+                ? (showOriginal ? repo.description : repo.description_en)
+                : (repo.description || "No description provided for this repository.")
+            )}
           </p>
           {Boolean(repo.description_en && repo.description_en !== repo.description) && (
             <button

@@ -48,6 +48,17 @@ function formatStars(num: number): string {
   return num.toString();
 }
 
+function decodeHtml(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
 type RadarSortCol = 'stars' | '1d' | '7d' | '30d' | 'per_day';
 
 export const SidebarRadar: React.FC<SidebarRadarProps> = ({
@@ -82,21 +93,23 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
     }
   };
 
-  const sortedRepos = [...repositories].sort((a, b) => {
-    let diff = 0;
-    if (sortCol === 'stars') {
-      diff = a.stars - b.stars;
-    } else if (sortCol === '1d') {
-      diff = (a.growth_1d_pct ?? 0) - (b.growth_1d_pct ?? 0);
-    } else if (sortCol === '7d') {
-      diff = (a.growth_7d_pct ?? 0) - (b.growth_7d_pct ?? 0);
-    } else if (sortCol === '30d') {
-      diff = (a.growth_30d_pct ?? 0) - (b.growth_30d_pct ?? 0);
-    } else if (sortCol === 'per_day') {
-      diff = a.stars_per_day - b.stars_per_day;
-    }
-    return sortAsc ? diff : -diff;
-  });
+  const sortedRepos = React.useMemo(() => {
+    return [...repositories].sort((a, b) => {
+      let diff = 0;
+      if (sortCol === 'stars') {
+        diff = a.stars - b.stars;
+      } else if (sortCol === '1d') {
+        diff = (a.growth_1d_pct ?? 0) - (b.growth_1d_pct ?? 0);
+      } else if (sortCol === '7d') {
+        diff = (a.growth_7d_pct ?? 0) - (b.growth_7d_pct ?? 0);
+      } else if (sortCol === '30d') {
+        diff = (a.growth_30d_pct ?? 0) - (b.growth_30d_pct ?? 0);
+      } else if (sortCol === 'per_day') {
+        diff = a.stars_per_day - b.stars_per_day;
+      }
+      return sortAsc ? diff : -diff;
+    });
+  }, [repositories, sortCol, sortAsc]);
 
   const renderSortIndicator = (col: RadarSortCol) => {
     if (sortCol !== col) return null;
@@ -228,7 +241,7 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
               {(repo.description_en || repo.description) && (
                 <div className="pl-12">
                   <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2 font-sans leading-relaxed">
-                    {repo.description_en || repo.description}
+                    {decodeHtml(repo.description_en || repo.description)}
                   </p>
                   {repo.description_en && repo.description_en !== repo.description && (
                     <span className="text-[9px] font-mono text-blue-500 dark:text-blue-400">

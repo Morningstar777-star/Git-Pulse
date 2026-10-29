@@ -60,6 +60,17 @@ function formatStars(num: number): string {
   return num.toString();
 }
 
+export function decodeHtml(text?: string | null): string {
+  if (!text) return '';
+  return text
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&#x27;/g, "'")
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>');
+}
+
 type ShortlistSortKey = 'name' | 'stars' | '1d' | '7d' | '30d' | 'per_day' | 'momentum';
 
 export const TopicExplorer: React.FC<TopicExplorerProps> = ({
@@ -251,7 +262,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
                             )}
                           </div>
                           <p className="text-slate-500 dark:text-slate-400 text-xs line-clamp-1 mt-0.5 max-w-lg font-sans">
-                            {repo.description_en || repo.description || "No description provided."}
+                            {decodeHtml(repo.description_en || repo.description || "No description provided.")}
                           </p>
                           <div className="flex items-center gap-1.5 flex-wrap mt-1">
                             {repo.topics.slice(0, 4).map((t) => (
@@ -491,18 +502,24 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
     );
   }
 
-  // Group repositories into topic sections using category top_repositories (25-30 repos each)
-  const topicSections = topics.map((cat) => {
-    // Sync watchlist state with active repositories
-    const repos = (cat.top_repositories || []).map((repo) => {
-      const match = repositories.find((r) => r.id === repo.id);
-      return match ? { ...repo, is_saved: match.is_saved } : repo;
+  // Group repositories into topic sections with O(1) watchlist set lookup & memoization
+  const savedSet = React.useMemo(
+    () => new Set(repositories.filter((r) => r.is_saved).map((r) => r.id)),
+    [repositories]
+  );
+
+  const topicSections = React.useMemo(() => {
+    return topics.map((cat) => {
+      const repos = (cat.top_repositories || []).map((repo) => ({
+        ...repo,
+        is_saved: savedSet.has(repo.id)
+      }));
+      return {
+        category: cat,
+        repositories: repos
+      };
     });
-    return {
-      category: cat,
-      repositories: repos
-    };
-  });
+  }, [topics, savedSet]);
 
   return (
     <main className="flex-1 overflow-y-auto pl-4 lg:pl-6 pr-0 py-6 space-y-8">
@@ -583,7 +600,7 @@ interface TopicScrollSectionProps {
   onSelectTopic: (topic: string) => void;
 }
 
-const TopicScrollSection: React.FC<TopicScrollSectionProps> = ({
+const TopicScrollSection: React.FC<TopicScrollSectionProps> = React.memo(({
   category,
   repositories,
   onSelectRepository,
@@ -653,7 +670,7 @@ const TopicScrollSection: React.FC<TopicScrollSectionProps> = ({
       </div>
     </div>
   );
-};
+});
 
 // -------------------------------------------------------------
 // COMPACT REPOSITORY CARD
@@ -666,7 +683,7 @@ interface CompactCardProps {
   onSelectTopic: (topic: string) => void;
 }
 
-const CompactCard: React.FC<CompactCardProps> = ({
+const CompactCard: React.FC<CompactCardProps> = React.memo(({
   repo,
   rank,
   onSelectRepository,
@@ -678,9 +695,10 @@ const CompactCard: React.FC<CompactCardProps> = ({
   const avatarClass = getAvatarColor(repo.name);
 
   const hasTranslation = Boolean(repo.description_en && repo.description_en !== repo.description);
-  const displayDescription = (hasTranslation && !showOriginal) 
+  const rawDescription = (hasTranslation && !showOriginal) 
     ? repo.description_en 
     : (repo.description || "No description provided.");
+  const displayDescription = decodeHtml(rawDescription);
 
   return (
     <div
@@ -791,4 +809,4 @@ const CompactCard: React.FC<CompactCardProps> = ({
       </div>
     </div>
   );
-};
+});
