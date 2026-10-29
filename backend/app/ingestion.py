@@ -297,7 +297,7 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
         full_name = r["full_name"]
         stars = max(1, r["stars"])
         cat_id = assign_category(r["topics"], r["description"], full_name=full_name)
-        is_emerging = 1 if (r.get("growth_1d_pct", 0) > 5.0 or r.get("stars_per_day", 0) > 50) else 0
+        is_emerging = 1 if (r.get("is_emerging") or r.get("growth_1d_pct", 0) > 5.0 or r.get("stars_per_day", 0) > 30) else 0
 
         # Calculate estimated 24h, 7d, 30d raw star changes
         # If rate per day is known:
@@ -331,8 +331,10 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
                 repo_id
             ))
         else:
-            forks = max(10, int(stars * 0.12))
-            created_at = (datetime.now(timezone.utc) - timedelta(days=random.randint(30, 700))).isoformat()
+            forks = r.get("forks") or max(10, int(stars * 0.12))
+            created_at = r.get("created_at") or (datetime.now(timezone.utc) - timedelta(days=random.randint(30, 700))).isoformat()
+            pushed_at = r.get("pushed_at") or now_iso
+            open_issues = r.get("open_issues", 15)
             cursor.execute("""
                 INSERT INTO repositories (
                     full_name, name, owner, html_url, description, description_en, language,
@@ -341,10 +343,10 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
             """, (
                 full_name, r["name"], r["owner"],
-                f"https://github.com/{full_name}",
+                r.get("html_url", f"https://github.com/{full_name}"),
                 desc_raw, desc_en, r.get("language", "TypeScript"),
-                json.dumps(r["topics"]), stars, forks, 15,
-                created_at, now_iso, cat_id, is_emerging, now_iso
+                json.dumps(r["topics"]), stars, forks, open_issues,
+                created_at, pushed_at, cat_id, is_emerging, now_iso
             ))
             repo_id = cursor.lastrowid
 
@@ -419,6 +421,204 @@ def scrape_trendshift() -> List[Dict[str, Any]]:
     print(f"[Ingestion] Scraped {len(repos)} active breakouts from Trendshift.")
     return repos
 
+def scrape_github_trending() -> List[Dict[str, Any]]:
+    """
+    Scrapes official GitHub Trending feeds without consuming any GitHub API quota.
+    Collects daily and weekly trending repositories across languages with exact 24h star growth.
+    """
+    print("[Ingestion] Scraping official GitHub Trending feeds (zero API token cost)...")
+    feeds = [
+        "https://github.com/trending?since=daily",
+        "https://github.com/trending?since=weekly",
+        "https://github.com/trending/python?since=daily",
+        "https://github.com/trending/typescript?since=daily",
+        "https://github.com/trending/rust?since=daily",
+        "https://github.com/trending/go?since=daily",
+        "https://github.com/trending/c++?since=daily"
+    ]
+    repos = []
+    seen = set()
+
+    for feed_url in feeds:
+        html = fetch_url(feed_url, timeout=10)
+        if not html:
+            continue
+
+        articles = re.findall(r'<article[^>]*class="[^"]*Box-row[^"]*"[^>]*>([\s\S]*?)</article>', html)
+        for art in articles:
+            name_m = re.search(r'href="/([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+)"', art)
+            if not name_m or "sponsors/" in name_m.group(1):
+                continue
+            full_name = name_m.group(1).strip()
+            if full_name in seen:
+                continue
+            seen.add(full_name)
+
+            parts = full_name.split('/')
+            owner = parts[0]
+            name = parts[1] if len(parts) > 1 else full_name
+
+            desc_m = re.search(r'<p[^>]*class="[^"]*col-9[^"]*"[^>]*>([\s\S]*?)</p>', art)
+            desc = re.sub(r'<[^>]+>', '', desc_m.group(1)).strip() if desc_m else ""
+
+            lang_m = re.search(r'itemprop="programmingLanguage">([^<]+)<', art)
+            lang = lang_m.group(1).strip() if lang_m else "TypeScript"
+
+            # Parse total stars
+            star_link_m = re.search(r'href="[^"]*/stargazers"[^>]*>([\s\S]*?)</a>', art)
+            total_stars = 0
+            if star_link_m:
+                clean_stars = re.sub(r'<[^>]+>', '', star_link_m.group(1)).strip().replace(",", "")
+                try:
+                    total_stars = int(clean_stars)
+                except Exception:
+                    pass
+
+            # Parse forks
+            fork_link_m = re.search(r'href="[^"]*/forks"[^>]*>([\s\S]*?)</a>', art)
+            forks = 0
+            if fork_link_m:
+                clean_forks = re.sub(r'<[^>]+>', '', fork_link_m.group(1)).strip().replace(",", "")
+                try:
+                    forks = int(clean_forks)
+                except Exception:
+                    pass
+
+            # Parse stars today or this week
+            stars_today_m = re.search(r'([0-9,]+)\s+stars\s+(today|this week)', art)
+            stars_gain = 0
+            if stars_today_m:
+                try:
+                    stars_gain = int(stars_today_m.group(1).replace(",", ""))
+                except Exception:
+                    pass
+
+            if total_stars == 0 and stars_gain > 0:
+                total_stars = stars_gain * 3
+
+            growth_1d = round((stars_gain / max(1, total_stars - stars_gain)) * 100.0, 2) if total_stars > 0 else 10.0
+
+            repos.append({
+                "full_name": full_name,
+                "owner": owner,
+                "name": name,
+                "description": desc,
+                "topics": ["github-trending", "trending", lang.lower()],
+                "stars": total_stars,
+                "forks": forks,
+                "growth_1d_pct": growth_1d,
+                "growth_7d_pct": round(growth_1d * 3.5, 2),
+                "growth_30d_pct": round(growth_1d * 8.0, 2),
+                "stars_per_day": stars_gain,
+                "language": lang,
+                "is_emerging": 1 if (stars_gain > 50 or growth_1d > 5.0) else 0
+            })
+
+    print(f"[Ingestion] Scraped {len(repos)} official trending repositories from GitHub.")
+    return repos
+
+def discover_emerging_repos_via_github_api() -> List[Dict[str, Any]]:
+    """
+    Surgically queries the GitHub Search API for brand-new emerging breakout repositories
+    (created in the last 14 to 30 days) that scrapers cannot discover yet.
+    Protected by rate-limit probes: uses only 4-5 search calls per sync cycle.
+    """
+    import os
+    import urllib.parse
+    from datetime import datetime, timezone, timedelta
+
+    token = os.getenv("GITHUB_TOKEN", "").strip()
+    if not token:
+        try:
+            from app.config import GITHUB_TOKEN
+            token = GITHUB_TOKEN
+        except Exception:
+            pass
+
+    headers = {
+        "Accept": "application/vnd.github.v3+json",
+        "User-Agent": "GitPulse-Explorer-Intelligence-Engine/1.0"
+    }
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+
+    # Verify search rate limit before proceeding
+    try:
+        req_rl = urllib.request.Request("https://api.github.com/rate_limit", headers=headers)
+        with urllib.request.urlopen(req_rl, context=ctx, timeout=8) as resp:
+            rl_data = json.loads(resp.read().decode("utf-8"))
+            search_remaining = rl_data.get("resources", {}).get("search", {}).get("remaining", 0)
+            if search_remaining < 2:
+                print(f"[Ingestion] GitHub search rate limit low ({search_remaining} remaining); skipping API discovery.")
+                return []
+    except Exception as e:
+        print(f"[Ingestion] Rate limit probe notice: {e}")
+
+    now = datetime.now(timezone.utc)
+    d14 = (now - timedelta(days=14)).strftime("%Y-%m-%d")
+    d30 = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+
+    queries = [
+        f"created:>{d14} stars:>30",
+        f"topic:agent created:>{d30} stars:>10",
+        f"mcp created:>{d30} stars:>10",
+        f"rust created:>{d30} stars:>20",
+        f"deepseek created:>{d30} stars:>10"
+    ]
+
+    emerging_repos = []
+    seen = set()
+
+    print(f"[Ingestion] Querying GitHub API for emerging repositories across {len(queries)} targeted queries...")
+
+    for q in queries:
+        url = f"https://api.github.com/search/repositories?q={urllib.parse.quote(q)}&sort=stars&order=desc&per_page=25"
+        try:
+            req = urllib.request.Request(url, headers=headers)
+            with urllib.request.urlopen(req, context=ctx, timeout=12) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                items = data.get("items", [])
+                for item in items:
+                    fn = item.get("full_name")
+                    if not fn or fn in seen:
+                        continue
+                    seen.add(fn)
+
+                    stars = item.get("stargazers_count", 0)
+                    forks = item.get("forks_count", 0)
+                    created_at_str = item.get("created_at") or now.isoformat()
+                    try:
+                        c_date = datetime.fromisoformat(created_at_str.replace("Z", "+00:00"))
+                        age_days = max(1, (now - c_date).days)
+                    except Exception:
+                        age_days = 14
+
+                    spd = max(1, int(stars / age_days))
+                    growth_1d = round(min(100.0, (spd / max(1, stars)) * 100.0), 2)
+
+                    emerging_repos.append({
+                        "full_name": fn,
+                        "owner": item.get("owner", {}).get("login", ""),
+                        "name": item.get("name", ""),
+                        "description": item.get("description") or f"Emerging breakout project: {fn}",
+                        "topics": item.get("topics", []) or ["emerging", "breakout"],
+                        "stars": stars,
+                        "forks": forks,
+                        "growth_1d_pct": growth_1d,
+                        "growth_7d_pct": round(growth_1d * 3.5, 2),
+                        "growth_30d_pct": round(growth_1d * 8.0, 2),
+                        "stars_per_day": spd,
+                        "language": item.get("language") or "Other",
+                        "created_at": created_at_str,
+                        "pushed_at": item.get("pushed_at") or now.isoformat(),
+                        "is_emerging": 1
+                    })
+        except Exception as e:
+            print(f"[Ingestion] Error querying GitHub API for '{q}': {e}")
+
+    print(f"[Ingestion] Discovered {len(emerging_repos)} brand-new emerging repositories via GitHub API.")
+    return emerging_repos
+
 def sync_repos_to_turso(repos: List[Dict[str, Any]]):
     """Synchronize crawled repositories directly to Turso cloud database if credentials exist."""
     import os
@@ -457,10 +657,12 @@ def sync_repos_to_turso(repos: List[Dict[str, Any]]):
                 if not full_name:
                     continue
                 stars = max(1, r.get("stars", 0))
-                forks = max(10, int(stars * 0.12))
+                forks = r.get("forks") or max(10, int(stars * 0.12))
                 cat_id = assign_category(r.get("topics", []), r.get("description", ""), full_name=full_name)
-                is_emerging = 1 if (r.get("growth_1d_pct", 0) > 5.0 or r.get("stars_per_day", 0) > 50) else 0
+                is_emerging = 1 if (r.get("is_emerging") or r.get("growth_1d_pct", 0) > 5.0 or r.get("stars_per_day", 0) > 30) else 0
                 topics_str = json.dumps(r.get("topics", []))
+                created_at = r.get("created_at") or now_iso
+                pushed_at = r.get("pushed_at") or now_iso
                 
                 sql = f"""
                 INSERT INTO repositories (
@@ -469,10 +671,10 @@ def sync_repos_to_turso(repos: List[Dict[str, Any]]):
                     category_id, is_emerging, last_crawled_at
                 ) VALUES (
                     {sql_str(full_name)}, {sql_str(r.get('name'))}, {sql_str(r.get('owner'))},
-                    {sql_str(f'https://github.com/{full_name}')}, {sql_str(r.get('description'))},
+                    {sql_str(r.get('html_url', f'https://github.com/{full_name}'))}, {sql_str(r.get('description'))},
                     {sql_str(r.get('description_en'))}, {sql_str(r.get('language', 'TypeScript'))},
-                    {sql_str(topics_str)}, {stars}, {forks}, 15,
-                    {sql_str(r.get('created_at', now_iso))}, {sql_str(now_iso)},
+                    {sql_str(topics_str)}, {stars}, {forks}, {r.get('open_issues', 15)},
+                    {sql_str(created_at)}, {sql_str(pushed_at)},
                     {sql_str(cat_id)}, {is_emerging}, {sql_str(now_iso)}
                 )
                 ON CONFLICT(full_name) DO UPDATE SET
@@ -585,7 +787,40 @@ def run_gitpulse_crawl() -> Dict[str, Any]:
                 if t not in all_repos[fn]["topics"]:
                     all_repos[fn]["topics"].append(t)
 
-    print(f"[Ingestion] Combined {len(all_repos)} unique trending repositories across GitPulse & Trendshift.")
+    # 3. Scrape GitHub Official Trending feeds (zero API quota consumption)
+    gh_trending_repos = scrape_github_trending()
+    for item in gh_trending_repos:
+        fn = item["full_name"]
+        if fn not in all_repos:
+            all_repos[fn] = item
+        else:
+            if item.get("stars_per_day"):
+                all_repos[fn]["stars_per_day"] = item["stars_per_day"]
+            if item.get("growth_1d_pct"):
+                all_repos[fn]["growth_1d_pct"] = item["growth_1d_pct"]
+            if item.get("is_emerging"):
+                all_repos[fn]["is_emerging"] = 1
+            for t in item.get("topics", []):
+                if t not in all_repos[fn]["topics"]:
+                    all_repos[fn]["topics"].append(t)
+
+    # 4. Discover Brand-New Emerging Breakouts via GitHub Search API (only 4-5 surgical queries)
+    api_emerging_repos = discover_emerging_repos_via_github_api()
+    for item in api_emerging_repos:
+        fn = item["full_name"]
+        if fn not in all_repos:
+            all_repos[fn] = item
+        else:
+            all_repos[fn]["is_emerging"] = 1
+            if item.get("created_at"):
+                all_repos[fn]["created_at"] = item["created_at"]
+            if item.get("pushed_at"):
+                all_repos[fn]["pushed_at"] = item["pushed_at"]
+            for t in item.get("topics", []):
+                if t not in all_repos[fn]["topics"]:
+                    all_repos[fn]["topics"].append(t)
+
+    print(f"[Ingestion] Combined {len(all_repos)} unique trending and emerging repositories across GitPulse, Trendshift, GitHub Trending & GitHub API.")
     saved = save_repos_to_database(list(all_repos.values()))
     print(f"[Ingestion] Central SQLite database synchronized: {saved} repositories updated.")
     sync_repos_to_turso(list(all_repos.values()))
