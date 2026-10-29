@@ -628,7 +628,9 @@ const TopicScrollSection: React.FC<TopicScrollSectionProps> = React.memo(({
             {category.name}
           </h2>
           <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-slate-100 dark:bg-[#21262d] text-slate-600 dark:text-slate-400">
-            {repositories.length} repos
+            {category.repository_count && category.repository_count > repositories.length
+              ? `${category.repository_count} repos`
+              : `${repositories.length} repos`}
           </span>
         </div>
 

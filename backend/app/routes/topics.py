@@ -60,15 +60,26 @@ async def get_topics_overview(
     stats_rows = await stats_cursor.fetchall()
     stats_by_cat = {r["category_id"]: r for r in stats_rows}
 
-    # 3. Fast query to fetch categorized repositories ordered for fast selection
+    # 3. High-speed partitioned window query to guarantee balanced repositories across EVERY category
     order_clause = "ORDER BY stars DESC" if mode == "popularity" else "ORDER BY is_emerging DESC, stars DESC"
-    all_repos_cursor = await db.execute(f"SELECT * FROM repositories WHERE category_id IS NOT NULL {order_clause} LIMIT 300;")
+    fetch_buffer = max(25, limit_per_topic + (0 if mode == "popularity" else 5))
+    window_query = f"""
+        SELECT * FROM (
+            SELECT *,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY category_id 
+                       {order_clause}
+                   ) as rn
+            FROM repositories 
+            WHERE category_id IS NOT NULL
+        ) WHERE rn <= ?;
+    """
+    all_repos_cursor = await db.execute(window_query, (fetch_buffer,))
     all_repos_rows = await all_repos_cursor.fetchall()
 
     # Group candidate repos by category (exact limit needed)
     candidate_repos_by_cat = {}
     selected_repo_ids = []
-    fetch_buffer = limit_per_topic + (0 if mode == "popularity" else 5)
 
     for r in all_repos_rows:
         cid = r["category_id"]
@@ -78,20 +89,23 @@ async def get_topics_overview(
             candidate_repos_by_cat[cid].append(r)
             selected_repo_ids.append(r["id"])
 
-    # 4. Streamlined batch query for snapshots of candidate repositories
+    # 4. Streamlined chunked batch query for snapshots of candidate repositories
     snapshots_by_repo = {}
     if selected_repo_ids:
-        placeholders = ",".join("?" for _ in selected_repo_ids)
-        snap_cursor = await db.execute(
-            f"SELECT repo_id, stars, delta_stars_24h, delta_stars_7d, delta_stars_30d FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
-            selected_repo_ids
-        )
-        snap_rows = await snap_cursor.fetchall()
-        for sr in snap_rows:
-            rid = sr["repo_id"]
-            if rid not in snapshots_by_repo:
-                snapshots_by_repo[rid] = []
-            snapshots_by_repo[rid].append(sr)
+        chunk_size = 200
+        for i in range(0, len(selected_repo_ids), chunk_size):
+            chunk = selected_repo_ids[i:i + chunk_size]
+            placeholders = ",".join("?" for _ in chunk)
+            snap_cursor = await db.execute(
+                f"SELECT repo_id, stars, delta_stars_24h, delta_stars_7d, delta_stars_30d FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
+                chunk
+            )
+            snap_rows = await snap_cursor.fetchall()
+            for sr in snap_rows:
+                rid = sr["repo_id"]
+                if rid not in snapshots_by_repo:
+                    snapshots_by_repo[rid] = []
+                snapshots_by_repo[rid].append(sr)
 
     # 5. Enrich and sort repositories per category
     topics_out = []

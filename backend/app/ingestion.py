@@ -130,134 +130,140 @@ def extract_all_topics_catalog() -> List[Dict[str, Any]]:
     return topic_list
 
 def assign_category(topics: List[str], description: str, full_name: str = "") -> str:
-    """Classifies repository into primary dashboard category using word-boundary & token matching."""
+    """Classifies repository into primary dashboard category using comprehensive token, semantic, and domain matching."""
     t_set = {t.lower().strip() for t in (topics or [])}
     desc_clean = (description or "").lower()
     fn_clean = (full_name or "").lower()
     text = f"{fn_clean} {desc_clean} " + " ".join(t_set)
 
     # 1. Web Scraping, Crawlers & Extraction
-    scraping_topics = {'scraping', 'web-scraping', 'crawler', 'crawlers', 'playwright', 'puppeteer', 'scrapy', 'spider', 'crawl4ai', 'scraper'}
-    if any(t in t_set for t in scraping_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'web scraper', 'web scraping', 'crawler', 'playwright', 'puppeteer', 'crawl4ai', 'scrapy spider', 'html extraction'
-    ]):
+    scraping_topics = {
+        'scraping', 'web-scraping', 'crawler', 'crawlers', 'playwright', 'puppeteer',
+        'scrapy', 'spider', 'spiders', 'crawl4ai', 'scraper', 'data-extraction', 'web-crawler'
+    }
+    if any(t in t_set for t in scraping_topics) or re.search(r'\b(scrap(ing|er|ers)|crawler|crawlers|crawl4ai|playwright|puppeteer|scrapy|spider|spiders|data extraction|html extraction|headless browser)\b', text):
         return 'web-scraping'
 
     # 2. Medical Science, BioTech & Healthcare AI
-    medical_topics = {'medical', 'bioinformatics', 'healthcare', 'genomics', 'biology', 'clinical', 'pathology', 'biomedical', 'medicine', 'health'}
-    if any(t in t_set for t in medical_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'bioinformatics', 'healthcare', 'clinical diagnosis', 'genomics', 'biomedical', 'medical imaging', 'pathology'
-    ]):
+    medical_topics = {
+        'medical', 'bioinformatics', 'healthcare', 'genomics', 'biology', 'clinical',
+        'pathology', 'biomedical', 'medicine', 'health', 'dna', 'protein', 'biotech',
+        'neuroscience', 'fitness', 'longevity', 'drug-discovery', 'patient', 'hospital',
+        'disease', 'mental-health', 'nutrition', 'workout', 'cardio', 'pharma', 'biomarker'
+    }
+    if any(t in t_set for t in medical_topics) or re.search(r'\b(medical|healthcare|bioinformatics|genomics|biomedical|clinical|pathology|dna|protein|biology|medicine|health|longevity|fitness|patient|hospital|drug discovery|disease|mental health|nutrition|cardio|pharma|biotech)\b', text):
         return 'medical-science'
 
     # 3. Arts, Culture & Creative Technology
-    arts_topics = {'art', 'arts', 'culture', 'photo-editor', 'vector', 'drawing', 'generative-art', 'photocraft', 'vectorcraft', 'canvas', 'creative-coding'}
-    if any(t in t_set for t in arts_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'photo editor', 'vector art', 'generative art', 'photocraft', 'vectorcraft', 'creative coding', 'digital canvas'
-    ]):
+    arts_topics = {
+        'art', 'arts', 'culture', 'photo-editor', 'vector', 'drawing', 'generative-art',
+        'photocraft', 'vectorcraft', 'canvas', 'creative-coding', 'design', 'illustration',
+        'fonts', 'font', 'icons', 'icon', 'svg', 'palette', 'theme', 'themes', 'animation',
+        'video-editor', 'creative', 'wallpaper', 'pixel-art', 'painting', 'typography'
+    }
+    if any(t in t_set for t in arts_topics) or re.search(r'\b(art|arts|culture|photo editor|photo editing|vector|generative art|creative coding|digital canvas|illustration|svg|fonts?|icons?|drawing|animation|video editing|video editor|color palette|pixel art|typography)\b', text):
         return 'arts-culture'
 
     # 4. Speech Synthesis, Voice AI & Audio DSP
-    speech_topics = {'speech', 'tts', 'text-to-speech', 'speech-to-text', 'asr', 'whisper', 'voice', 'voice-cloning', 'audio', 'sound', 'speech-synthesis', 'wav2lip', 'fish-speech', 'chatterbox', 'gpt-sovits'}
-    if any(t in t_set for t in speech_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'text to speech', 'speech to text', 'voice cloning', 'speech synthesis', 'whisper model', 'audio transcription'
-    ]):
+    speech_topics = {
+        'speech', 'tts', 'text-to-speech', 'speech-to-text', 'stt', 'asr', 'whisper',
+        'voice', 'voice-cloning', 'audio', 'sound', 'speech-synthesis', 'wav2lip',
+        'fish-speech', 'chatterbox', 'gpt-sovits', 'music', 'synthesizer', 'dsp', 'podcast', 'transcription'
+    }
+    if any(t in t_set for t in speech_topics) or re.search(r'\b(tts|stt|whisper|text-to-speech|speech-to-text|voice cloning|speech synthesis|speech recognition|transcription|audio processing|synthesizer|dsp|voice assistant|audio)\b', text):
         return 'speech-audio'
 
     # 5. Game Engines, 3D Models & WebGL
-    gaming_topics = {'3d', 'threejs', 'three.js', 'webgl', 'game-engine', 'godot', 'unity', 'unreal', 'shaders', 'rendering', 'vulkan', 'opengl', 'react-three-fiber'}
-    if any(t in t_set for t in gaming_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'three.js', 'threejs', 'webgl', 'game engine', 'godot', 'react three fiber', '3d model', 'shader rendering'
-    ]):
+    gaming_topics = {
+        '3d', 'threejs', 'three.js', 'webgl', 'game-engine', 'godot', 'unity', 'unreal',
+        'shaders', 'rendering', 'vulkan', 'opengl', 'react-three-fiber', 'gamedev', 'cad',
+        'text-to-cad', 'graphics', 'mesh', '3d-model', 'blender', 'raytracing', 'canvas-3d'
+    }
+    if any(t in t_set for t in gaming_topics) or re.search(r'\b(3d|three\.js|threejs|webgl|game engine|godot|unity|unreal|shaders?|rendering|vulkan|opengl|react-three-fiber|gamedev|cad|3d printing|mesh rendering|computer graphics|blender)\b', text):
         return 'gaming-graphics'
 
     # 6. Privacy, Adblocking & Anti-Tracking
-    privacy_topics = {'privacy', 'adblock', 'adblocking', 'debloat', 'anti-tracking', 'dns', 'vpn', 'wireguard', 'anonymity', 'tor', 'cleanyourtv'}
-    if any(t in t_set for t in privacy_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'adblock', 'debloat', 'anti-tracking', 'privacy filter', 'cleanyourtv', 'wireguard vpn', 'dns adblock'
-    ]):
+    privacy_topics = {
+        'privacy', 'adblock', 'adblocking', 'debloat', 'anti-tracking', 'dns', 'vpn',
+        'wireguard', 'anonymity', 'tor', 'cleanyourtv', 'anti-censorship', 'tracker-blocker',
+        'hosts', 'pi-hole', 'adguard'
+    }
+    if any(t in t_set for t in privacy_topics) or re.search(r'\b(adblock|adblocking|debloat|anti-tracking|privacy|anonymity|pi-hole|adguard|wireguard|vpn|tor network|anti-censorship|tracker block)\b', text):
         return 'privacy-adblock'
 
     # 7. Education, Open Knowledge & Books
-    edu_topics = {'education', 'learning', 'curriculum', 'textbook', 'textbooks', 'tutorial', 'awesome-list', 'cheat-sheet', 'how-to', 'life-guide', 'howto'}
-    if any(t in t_set for t in edu_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'textbook', 'computer science curriculum', 'how to live better', 'awesome list', 'learning roadmap', 'educational guide'
-    ]):
+    edu_topics = {
+        'education', 'learning', 'curriculum', 'textbook', 'textbooks', 'tutorial',
+        'awesome-list', 'cheat-sheet', 'how-to', 'life-guide', 'howto', 'course',
+        'books', 'papers', 'study', 'knowledge', 'cs-courses', 'freecodecamp'
+    }
+    if any(t in t_set for t in edu_topics) or re.search(r'\b(education|curriculum|tutorial|textbooks?|cheat sheet|awesome list|how to|learning guide|cs courses?|study guide|handbook|freecodecamp|interview preparation)\b', text):
         return 'education-learning'
 
     # 8. Browser Agents & Autonomous Workflows
-    auto_topics = {'browser-use', 'automation', 'browser-agent', 'headless-browser', 'workflow-automation', 'task-automation'}
-    if any(t in t_set for t in auto_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'browser agent', 'browser use', 'web agent', 'task automation', 'autonomous workflow'
-    ]):
+    auto_topics = {
+        'browser-use', 'automation', 'browser-agent', 'headless-browser', 'workflow-automation',
+        'task-automation', 'workflow', 'n8n', 'automate', 'rpa', 'bot', 'cron', 'scheduler',
+        'nocode', 'lowcode'
+    }
+    if any(t in t_set for t in auto_topics) or re.search(r'\b(workflow automation|browser-use|browser agent|task automation|autonomous workflow|automation platform|rpa|automate|automated workflow|scheduled tasks|cron)\b', text):
         return 'smart-automation'
 
     # 9. LLM Agents & Generative Apps
     llm_topics = {
         'llm', 'llms', 'agent', 'agents', 'prompt', 'prompts', 'rag', 'langchain', 'llamaindex',
         'ollama', 'claude', 'gpt', 'gpt-4', 'chatgpt', 'crewai', 'mcp', 'deepseek', 'copilot',
-        'autonomous-agents', 'reasoning', 'agentic'
+        'autonomous-agents', 'reasoning', 'agentic', 'genai', 'openai', 'gemini', 'anthropic',
+        'ai-agent', 'coding-agent', 'ai-agents'
     }
-    if any(t in t_set for t in llm_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'llm', 'large language model', 'langchain', 'ollama', 'claude', 'gpt-4', 'chatgpt',
-        'crewai', 'deepseek', 'agentic', 'retrieval-augmented generation'
-    ]):
+    if any(t in t_set for t in llm_topics) or re.search(r'\b(llm|llms|agentic|langchain|ollama|deepseek|rag|crewai|chatgpt|gpt|prompts?|reasoning model|coding agent|ai agents?|autonomous agents?|mcp server|retrieval augmented)\b', text):
         return 'llm-agents'
 
     # 10. Cybersecurity & Pentesting
     sec_topics = {
         'cybersecurity', 'security', 'penetration-testing', 'pentest', 'exploit', 'vulnerability',
-        'reverse-engineering', 'cryptography', 'malware', 'ctf', 'infosec', 'firewall', 'hacking', 'decompiler', 'rea'
+        'reverse-engineering', 'cryptography', 'malware', 'ctf', 'infosec', 'firewall', 'hacking',
+        'decompiler', 'rea', 'binary-analysis', 'red-team', 'blue-team', 'bugbounty'
     }
-    if any(t in t_set for t in sec_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'cybersecurity', 'pentest', 'penetration testing', 'vulnerability scanner', 'reverse engineering',
-        'malware analysis', 'decompiler', 'cryptography', 'binary analysis'
-    ]):
+    if any(t in t_set for t in sec_topics) or re.search(r'\b(cybersecurity|pentest|penetration testing|vulnerability|reverse engineering|malware|decompiler|cryptography|binary analysis|infosec|exploit|bug bounty|red team|security audit)\b', text):
         return 'cybersecurity'
 
     # 11. Quant & Data Science
     quant_topics = {
         'quantitative-finance', 'trading', 'algorithmic-trading', 'crypto', 'cryptocurrency',
-        'backtesting', 'finance', 'fintech', 'bitcoin', 'ethereum', 'solana', 'defi'
+        'backtesting', 'finance', 'fintech', 'bitcoin', 'ethereum', 'solana', 'defi',
+        'stocks', 'investing', 'quant', 'portfolio', 'orderbook', 'market-data', 'yfinance',
+        'openbb', 'accounting', 'ledger', 'wallet', 'finances'
     }
-    if any(t in t_set for t in quant_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'algorithmic trading', 'backtesting', 'cryptocurrency', 'bitcoin', 'ethereum', 'fintech', 'trading bot'
-    ]):
+    if any(t in t_set for t in quant_topics) or re.search(r'\b(quantitative finance|algorithmic trading|trading bot|backtest|backtesting|crypto|cryptocurrency|bitcoin|ethereum|stocks?|investing|financial|fintech|quant|portfolio optimization|orderbook|market data|personal finances)\b', text):
         return 'quant-datasci'
 
     # 12. Robotics & Hardware
     robot_topics = {
         'robotics', 'robot', 'ros', 'ros2', 'embedded', 'arduino', 'esp32', 'firmware',
-        'iot', 'hardware', 'microcontroller', 'drone', 'raspberry-pi'
+        'iot', 'hardware', 'microcontroller', 'drone', 'raspberry-pi', 'stm32', 'circuit',
+        'sensor', 'edge-computing'
     }
-    if any(t in t_set for t in robot_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'robotics', 'robot', 'ros2', 'arduino', 'esp32', 'firmware', 'microcontroller', 'embedded systems'
-    ]):
+    if any(t in t_set for t in robot_topics) or re.search(r'\b(robotics?|ros2?|embedded|arduino|esp32|microcontroller|firmware|iot|drone|hardware device|raspberry pi|sensors?)\b', text):
         return 'robotics-hardware'
 
     # 13. Data Engineering & Databases
     data_topics = {
         'database', 'databases', 'sql', 'postgresql', 'postgres', 'mysql', 'sqlite', 'duckdb',
         'clickhouse', 'polars', 'pandas', 'spark', 'kafka', 'data-warehouse', 'etl', 'olap',
-        'supabase', 'redis', 'vector-database', 'chroma', 'milvus', 'nosql', 'relational-database'
+        'supabase', 'redis', 'vector-database', 'chroma', 'milvus', 'nosql', 'relational-database',
+        'data-pipeline'
     }
-    if any(t in t_set for t in data_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'database', 'databases', 'postgresql', 'postgres', 'mysql', 'sqlite', 'duckdb',
-        'clickhouse', 'polars', 'supabase', 'redis', 'olap', 'vector database', 'data warehouse'
-    ]):
+    if any(t in t_set for t in data_topics) or re.search(r'\b(databases?|postgresql|postgres|mysql|sqlite|duckdb|clickhouse|polars|spark|kafka|data warehouse|etl pipeline|olap|vector database|redis|supabase|stream processing)\b', text):
         return 'data-engineering'
 
     # 14. Infrastructure & DevOps
     infra_topics = {
         'kubernetes', 'k8s', 'docker', 'devops', 'terraform', 'ansible', 'linux', 'cloud-native',
         'serverless', 'ci-cd', 'terminal', 'cli', 'tui', 'zsh', 'bash', 'shell', 'system-design',
-        'proxy', 'networking', 'mesh', 'vpn', 'oh-my-zsh', 'sysadmin', 'command-line', 'ssh'
+        'proxy', 'networking', 'mesh', 'sysadmin', 'command-line', 'ssh', 'homelab', 'self-hosted'
     }
-    if any(t in t_set for t in infra_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'kubernetes', 'docker container', 'devops', 'terraform', 'linux kernel', 'terminal ui',
-        'command-line interface', 'cli tool', 'zsh configuration', 'oh my zsh', 'system design primer',
-        'reverse proxy', 'wireguard', 'shell framework', 'system design'
-    ]):
+    if any(t in t_set for t in infra_topics) or re.search(r'\b(kubernetes|k8s|docker|devops|terraform|ansible|linux|cloud native|serverless|ci\/cd|terminal ui|command line|cli tool|system design|homelab|self-hosted|reverse proxy|networking)\b', text):
         return 'infrastructure'
 
     # 15. Web Frameworks
@@ -266,10 +272,7 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'frontend', 'fullstack', 'javascript', 'typescript', 'css', 'html5', 'astro', 'remix',
         'web-framework', 'web-development', 'ui-library', 'component', 'shadcn', 'webui'
     }
-    if any(t in t_set for t in web_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'react', 'next.js', 'vue.js', 'angular', 'svelte', 'tailwind css', 'frontend framework',
-        'web application', 'ui components', 'web framework'
-    ]):
+    if any(t in t_set for t in web_topics) or re.search(r'\b(react|next\.js|nextjs|vue\.js|vuejs|angular|svelte|tailwindcss|tailwind css|frontend framework|web application|ui components?|shadcn|web framework|css framework)\b', text):
         return 'web-frameworks'
 
     # 16. AI & Machine Learning
@@ -278,10 +281,7 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'computer-vision', 'diffusion', 'stable-diffusion', 'huggingface', 'reinforcement-learning',
         'transformers', 'nlp', 'object-detection', 'scikit-learn', 'deep-neural-networks'
     }
-    if any(t in t_set for t in ai_topics) or any(re.search(r'\b' + re.escape(w) + r'\b', text) for w in [
-        'machine learning', 'deep learning', 'pytorch', 'tensorflow', 'neural network',
-        'diffusion model', 'computer vision', 'transformer architecture', 'scikit-learn'
-    ]):
+    if any(t in t_set for t in ai_topics) or re.search(r'\b(machine learning|deep learning|pytorch|tensorflow|neural networks?|computer vision|diffusion models?|reinforcement learning|transformer models?|scikit-learn)\b', text):
         return 'ai-ml'
 
     # 17. Default: Emerging Tech
