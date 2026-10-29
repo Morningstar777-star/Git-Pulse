@@ -375,8 +375,13 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
           )}
         </div>
 
-        {/* Repositories Grid */}
-        {repositories.length > 0 ? (
+        {/* Repositories Grid or Search Loading State */}
+        {isLoading && repositories.length === 0 ? (
+          <div className="py-20 text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto" />
+            <p className="text-xs font-mono text-slate-400">Searching repositories for "{searchQuery}"...</p>
+          </div>
+        ) : repositories.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
             {repositories.map((repo, idx) => (
               <CompactCard

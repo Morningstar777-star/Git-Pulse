@@ -60,9 +60,9 @@ async def get_topics_overview(
     stats_rows = await stats_cursor.fetchall()
     stats_by_cat = {r["category_id"]: r for r in stats_rows}
 
-    # 3. Single query to fetch categorized repositories ordered for fast selection
+    # 3. Fast query to fetch categorized repositories ordered for fast selection
     order_clause = "ORDER BY stars DESC" if mode == "popularity" else "ORDER BY is_emerging DESC, stars DESC"
-    all_repos_cursor = await db.execute(f"SELECT * FROM repositories WHERE category_id IS NOT NULL {order_clause};")
+    all_repos_cursor = await db.execute(f"SELECT * FROM repositories WHERE category_id IS NOT NULL {order_clause} LIMIT 300;")
     all_repos_rows = await all_repos_cursor.fetchall()
 
     # Group candidate repos by category (exact limit needed)

@@ -30,7 +30,30 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ className = '' }) => {
   }, [isDark]);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
+    const root = document.documentElement;
+    root.classList.add('disable-transitions');
+    
+    setIsDark((prev) => {
+      const next = !prev;
+      if (next) {
+        root.classList.add('dark');
+        root.classList.remove('light');
+        localStorage.setItem('app-theme', 'dark');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        root.classList.add('light');
+        localStorage.setItem('app-theme', 'light');
+        localStorage.setItem('theme', 'light');
+      }
+      return next;
+    });
+
+    window.requestAnimationFrame(() => {
+      setTimeout(() => {
+        root.classList.remove('disable-transitions');
+      }, 50);
+    });
   };
 
   return (

@@ -148,7 +148,19 @@ def score_repository_relevance(repo: Dict[str, Any], intent: Dict[str, Any]) -> 
     full_name_lower = (repo.get("full_name") or "").lower()
     desc_lower = (repo.get("description") or "").lower()
     desc_en_lower = (repo.get("description_en") or "").lower()
-    topics_list = [t.lower() for t in (repo.get("topics") or [])]
+    
+    # Robustly handle topics whether list, JSON string, or comma-separated string
+    raw_topics = repo.get("topics") or []
+    if isinstance(raw_topics, str):
+        try:
+            import json as _json
+            topics_list = [str(t).lower() for t in _json.loads(raw_topics)]
+        except Exception:
+            topics_list = [t.strip().lower() for t in raw_topics.split(",") if t.strip()]
+    elif isinstance(raw_topics, list):
+        topics_list = [str(t).lower() for t in raw_topics]
+    else:
+        topics_list = []
     topics_text = " ".join(topics_list)
 
     score = 0.0

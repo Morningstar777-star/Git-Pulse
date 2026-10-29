@@ -54,6 +54,15 @@ html.light ::-webkit-scrollbar-thumb:hover {
   background: rgba(140, 149, 159, 0.6);
 }
 
+/* Zero-Jank theme switch: prevents hundreds of simultaneous card transitions during theme toggle */
+.disable-transitions,
+.disable-transitions * {
+  -webkit-transition: none !important;
+  -moz-transition: none !important;
+  -o-transition: none !important;
+  transition: none !important;
+}
+
 /* ==========================================================================
    Day & Night Celestial Theme Toggle
    ========================================================================== */

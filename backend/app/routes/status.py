@@ -37,10 +37,19 @@ async def get_system_status(db=Depends(get_db_connection)):
 
     # Fetch last crawl timestamp
     cursor_crawl = await db.execute(
-        "SELECT finished_at FROM crawl_history WHERE status = 'COMPLETED' ORDER BY id DESC LIMIT 1;"
+        "SELECT finished_at FROM crawl_history WHERE LOWER(status) = 'completed' ORDER BY id DESC LIMIT 1;"
     )
     last_crawl = await cursor_crawl.fetchone()
-    last_time = last_crawl[0] if last_crawl else scheduler.last_run_at
+    last_time = None
+    if last_crawl and last_crawl[0]:
+        last_time = last_crawl[0]
+    else:
+        cursor_latest = await db.execute("SELECT MAX(last_crawled_at) FROM repositories;")
+        row_latest = await cursor_latest.fetchone()
+        if row_latest and row_latest[0]:
+            last_time = row_latest[0]
+        else:
+            last_time = scheduler.last_run_at
 
     return SystemStatus(
         last_refresh_at=last_time,

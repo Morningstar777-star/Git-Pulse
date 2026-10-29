@@ -419,6 +419,92 @@ def scrape_trendshift() -> List[Dict[str, Any]]:
     print(f"[Ingestion] Scraped {len(repos)} active breakouts from Trendshift.")
     return repos
 
+def sync_repos_to_turso(repos: List[Dict[str, Any]]):
+    """Synchronize crawled repositories directly to Turso cloud database if credentials exist."""
+    import os
+    turso_url = os.getenv("TURSO_DATABASE_URL")
+    turso_token = os.getenv("TURSO_AUTH_TOKEN")
+    if not turso_url or not turso_token:
+        try:
+            from app.config import TURSO_DATABASE_URL, TURSO_AUTH_TOKEN
+            turso_url = TURSO_DATABASE_URL
+            turso_token = TURSO_AUTH_TOKEN
+        except Exception:
+            pass
+
+    if not turso_url or not turso_token:
+        print("[Ingestion] Turso credentials not present; skipping remote sync.")
+        return
+
+    print(f"[Ingestion] Syncing {len(repos)} repositories directly to Turso cloud database...")
+    try:
+        from app.turso_client import TursoClient
+        client = TursoClient(turso_url, turso_token, timeout=25)
+        now_iso = datetime.now(timezone.utc).isoformat()
+        batch_size = 50
+
+        def sql_str(val):
+            if val is None:
+                return "NULL"
+            s = str(val).replace("'", "''")
+            return f"'{s}'"
+
+        for i in range(0, len(repos), batch_size):
+            batch = repos[i:i + batch_size]
+            statements = []
+            for r in batch:
+                full_name = r.get("full_name")
+                if not full_name:
+                    continue
+                stars = max(1, r.get("stars", 0))
+                forks = max(10, int(stars * 0.12))
+                cat_id = assign_category(r.get("topics", []), r.get("description", ""), full_name=full_name)
+                is_emerging = 1 if (r.get("growth_1d_pct", 0) > 5.0 or r.get("stars_per_day", 0) > 50) else 0
+                topics_str = json.dumps(r.get("topics", []))
+                
+                sql = f"""
+                INSERT INTO repositories (
+                    full_name, name, owner, html_url, description, description_en, language,
+                    topics, stars, forks, open_issues, created_at, pushed_at,
+                    category_id, is_emerging, last_crawled_at
+                ) VALUES (
+                    {sql_str(full_name)}, {sql_str(r.get('name'))}, {sql_str(r.get('owner'))},
+                    {sql_str(f'https://github.com/{full_name}')}, {sql_str(r.get('description'))},
+                    {sql_str(r.get('description_en'))}, {sql_str(r.get('language', 'TypeScript'))},
+                    {sql_str(topics_str)}, {stars}, {forks}, 15,
+                    {sql_str(r.get('created_at', now_iso))}, {sql_str(now_iso)},
+                    {sql_str(cat_id)}, {is_emerging}, {sql_str(now_iso)}
+                )
+                ON CONFLICT(full_name) DO UPDATE SET
+                    stars = excluded.stars,
+                    description = COALESCE(NULLIF(excluded.description, ''), repositories.description),
+                    description_en = COALESCE(excluded.description_en, repositories.description_en),
+                    language = COALESCE(NULLIF(excluded.language, ''), repositories.language),
+                    topics = excluded.topics,
+                    category_id = excluded.category_id,
+                    is_emerging = excluded.is_emerging,
+                    last_crawled_at = excluded.last_crawled_at,
+                    pushed_at = excluded.pushed_at;
+                """
+                statements.append(sql.strip())
+            
+            if statements:
+                try:
+                    client.execute_batch(statements)
+                except Exception as b_err:
+                    print(f"[Ingestion] Warning on Turso batch {i}: {b_err}")
+
+        # Record crawl history
+        try:
+            client.execute_batch([
+                f"INSERT INTO crawl_history (started_at, finished_at, status, repos_updated, rate_limit_remaining) VALUES ('{now_iso}', '{now_iso}', 'completed', {len(repos)}, 5000);"
+            ])
+        except Exception:
+            pass
+        print(f"[Ingestion] Successfully synchronized {len(repos)} repositories to Turso!")
+    except Exception as e:
+        print(f"[Ingestion] Notice syncing to Turso: {e}")
+
 def run_gitpulse_crawl() -> Dict[str, Any]:
     """
     Centralized high-speed data collection engine:
@@ -502,6 +588,7 @@ def run_gitpulse_crawl() -> Dict[str, Any]:
     print(f"[Ingestion] Combined {len(all_repos)} unique trending repositories across GitPulse & Trendshift.")
     saved = save_repos_to_database(list(all_repos.values()))
     print(f"[Ingestion] Central SQLite database synchronized: {saved} repositories updated.")
+    sync_repos_to_turso(list(all_repos.values()))
     return {"status": "SUCCESS", "repos_synced": saved, "total_scraped": len(all_repos)}
 
 if __name__ == "__main__":

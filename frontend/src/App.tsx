@@ -60,6 +60,7 @@ export const App: React.FC = () => {
 
   // In-memory cache for instantaneous mode & timeframe switching (0ms latency)
   const topicsCacheRef = React.useRef<Record<string, TopicCategory[]>>({});
+  const reposCacheRef = React.useRef<Record<string, Repository[]>>({});
   const searchReqIdRef = React.useRef<number>(0);
 
   // Load Topics (Curated categories with 20 repos each, sorted by mode and timeframe)
@@ -104,9 +105,24 @@ export const App: React.FC = () => {
   // Load Repositories for Main Content Area (Reset page to 1 on filter change)
   const loadRepositories = useCallback(async (pageToLoad: number = 1, append: boolean = false) => {
     const thisReqId = ++searchReqIdRef.current;
+    const trimmedSearch = searchQuery.trim();
+    const cacheKey = `${mode}:${popularitySortBy}:${timeWindow}:${activeCategoryId || ''}:${activeTopic || ''}:${trimmedSearch}:${isWatchlistView ? 'wl' : 'all'}:${pageToLoad}`;
+
+    // Instant switch from memory cache if non-append and available (0ms latency)
+    if (!append && reposCacheRef.current[cacheKey]) {
+      setRepositories(reposCacheRef.current[cacheKey]);
+      setHasMoreRepos(reposCacheRef.current[cacheKey].length >= 40);
+      setIsLoading(false);
+      return;
+    }
+
+    if (!append && trimmedSearch) {
+      // Clear previous search results so they don't linger while new query is in flight
+      setRepositories([]);
+    }
+
     setIsLoading(true);
     try {
-      const trimmedSearch = searchQuery.trim();
       const sortByParam = trimmedSearch
         ? 'relevance'
         : (mode === 'popularity' ? popularitySortBy : undefined);
@@ -129,6 +145,7 @@ export const App: React.FC = () => {
       if (append) {
         setRepositories((prev) => [...prev, ...reposData]);
       } else {
+        reposCacheRef.current[cacheKey] = reposData;
         setRepositories(reposData);
       }
       setHasMoreRepos(reposData.length >= 40);

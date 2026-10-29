@@ -1,6 +1,7 @@
 import math
 import json
 import re
+import time
 import sqlite3
 from typing import List, Optional
 from fastapi import APIRouter, Depends, Query, HTTPException
@@ -14,6 +15,10 @@ from app.translator import translate_cjk_sync
 from app.auth import get_current_user_optional
 
 router = APIRouter(prefix="/api/repositories", tags=["Repositories"])
+
+_REPOS_CACHE = {}
+_REPOS_CACHE_TIMESTAMP = {}
+CACHE_TTL = 180  # 3 minutes in-memory cache for 0ms filter toggling
 
 def row_to_repo_dict(row, snapshots=None, is_saved=False) -> dict:
     topics = []
@@ -157,6 +162,12 @@ async def list_repositories(
     table column header sorting (1D, 7D, 30D, Stars, Per Day), topic tag filtering,
     language tags, live on-demand GitHub search, and infinite-scroll pagination.
     """
+    user_id = user["id"] if user and isinstance(user, dict) else None
+    cache_key = f"{mode}:{sort_by}:{sort_order}:{time_window}:{category_id}:{topic}:{language}:{search}:{q}:{min_stars}:{is_emerging}:{watchlist_only}:{page}:{page_size}:{user_id}"
+    now_ts = time.time()
+    if cache_key in _REPOS_CACHE and (now_ts - _REPOS_CACHE_TIMESTAMP.get(cache_key, 0)) < CACHE_TTL:
+        return _REPOS_CACHE[cache_key]
+
     # Fetch watchlist repo IDs for authenticated user (empty if unauthenticated)
     saved_ids = set()
     if user and isinstance(user, dict):
@@ -214,6 +225,13 @@ async def list_repositories(
 
         if clause_parts:
             query += " AND (" + " OR ".join(clause_parts) + ")"
+        query += " LIMIT 150"
+    else:
+        # Optimization: when browsing (no search term), avoid scanning the whole table over HTTP
+        if mode == "popularity":
+            query += " ORDER BY stars DESC LIMIT 200"
+        else:
+            query += " ORDER BY is_emerging DESC, stars DESC LIMIT 200"
 
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()
@@ -261,10 +279,8 @@ async def list_repositories(
         for it in items:
             it["_relevance_score"] = score_repository_relevance(it, intent)
 
-        # Filter out items with 0 relevance if we have positive matches
-        pos_matches = [it for it in items if it.get("_relevance_score", 0) > 0]
-        if pos_matches:
-            items = pos_matches
+        # Filter out items with 0 relevance (strict intent matching)
+        items = [it for it in items if it.get("_relevance_score", 0) > 0]
 
         if sort_by in ("stars", "stars_count"):
             items.sort(key=lambda x: (x.get("_relevance_score", 0), x["stars"]), reverse=True)
@@ -321,7 +337,10 @@ async def list_repositories(
     # Pagination for infinite scroll
     start = (page - 1) * page_size
     end = start + page_size
-    return items[start:end]
+    res = items[start:end]
+    _REPOS_CACHE[cache_key] = res
+    _REPOS_CACHE_TIMESTAMP[cache_key] = now_ts
+    return res
 
 @router.get("/{repo_id}", response_model=RepositoryDetail)
 async def get_repository_detail(
