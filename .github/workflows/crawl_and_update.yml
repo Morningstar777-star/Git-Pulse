@@ -49,6 +49,8 @@ jobs:
           # Only commit if there are actual database changes
           if ! git diff --staged --quiet; then
             git commit -m "chore(data): auto-sync central trending database [skip ci]"
+            # Rebase against any recent commits before pushing
+            git pull --rebase origin main || true
             git push origin main
           else
             echo "Database is already up to date. No changes to commit."

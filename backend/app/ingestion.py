@@ -139,9 +139,11 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
     # 1. Web Scraping, Crawlers & Extraction
     scraping_topics = {
         'scraping', 'web-scraping', 'crawler', 'crawlers', 'playwright', 'puppeteer',
-        'scrapy', 'spider', 'spiders', 'crawl4ai', 'scraper', 'data-extraction', 'web-crawler'
+        'scrapy', 'spider', 'spiders', 'crawl4ai', 'scraper', 'data-extraction', 'web-crawler',
+        'crawling', 'extractor', 'html-parser', 'cheerio', 'beautifulsoup', 'selenium',
+        'browser-automation', 'anti-detect', 'stealth', 'scraping-framework'
     }
-    if any(t in t_set for t in scraping_topics) or re.search(r'\b(scrap(ing|er|ers)|crawler|crawlers|crawl4ai|playwright|puppeteer|scrapy|spider|spiders|data extraction|html extraction|headless browser)\b', text):
+    if any(t in t_set for t in scraping_topics) or re.search(r'\b(scrap(ing|er|ers)|crawler|crawlers|crawling|crawl4ai|playwright|puppeteer|scrapy|spider|spiders|data extraction|html extraction|headless browser|anti-detect|stealth browser)\b', text):
         return 'web-scraping'
 
     # 2. Medical Science, BioTech & Healthcare AI
@@ -149,9 +151,10 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'medical', 'bioinformatics', 'healthcare', 'genomics', 'biology', 'clinical',
         'pathology', 'biomedical', 'medicine', 'health', 'dna', 'protein', 'biotech',
         'neuroscience', 'fitness', 'longevity', 'drug-discovery', 'patient', 'hospital',
-        'disease', 'mental-health', 'nutrition', 'workout', 'cardio', 'pharma', 'biomarker'
+        'disease', 'mental-health', 'nutrition', 'workout', 'cardio', 'pharma', 'biomarker',
+        'radiology', 'dicom', 'pharmacology', 'mri', 'wellness'
     }
-    if any(t in t_set for t in medical_topics) or re.search(r'\b(medical|healthcare|bioinformatics|genomics|biomedical|clinical|pathology|dna|protein|biology|medicine|health|longevity|fitness|patient|hospital|drug discovery|disease|mental health|nutrition|cardio|pharma|biotech)\b', text):
+    if any(t in t_set for t in medical_topics) or re.search(r'\b(medical|healthcare|bioinformatics|genomics|biomedical|clinical|pathology|dna|protein|biology|medicine|health|longevity|fitness|patient|hospital|drug discovery|disease|mental health|nutrition|cardio|pharma|biotech|radiology|dicom)\b', text):
         return 'medical-science'
 
     # 3. Arts, Culture & Creative Technology
@@ -159,9 +162,10 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'art', 'arts', 'culture', 'photo-editor', 'vector', 'drawing', 'generative-art',
         'photocraft', 'vectorcraft', 'canvas', 'creative-coding', 'design', 'illustration',
         'fonts', 'font', 'icons', 'icon', 'svg', 'palette', 'theme', 'themes', 'animation',
-        'video-editor', 'creative', 'wallpaper', 'pixel-art', 'painting', 'typography'
+        'video-editor', 'creative', 'wallpaper', 'pixel-art', 'painting', 'typography',
+        'ui-ux', 'design-system', 'uikit', 'figma', 'sketch', 'styleguide', 'design-intelligence'
     }
-    if any(t in t_set for t in arts_topics) or re.search(r'\b(art|arts|culture|photo editor|photo editing|vector|generative art|creative coding|digital canvas|illustration|svg|fonts?|icons?|drawing|animation|video editing|video editor|color palette|pixel art|typography)\b', text):
+    if any(t in t_set for t in arts_topics) or re.search(r'\b(art|arts|culture|photo editor|photo editing|vector|generative art|creative coding|digital canvas|illustration|svg|fonts?|icons?|drawing|animation|video editing|video editor|color palette|pixel art|typography|design system|ui\/ux|design intelligence|figma)\b', text):
         return 'arts-culture'
 
     # 4. Speech Synthesis, Voice AI & Audio DSP
@@ -170,43 +174,46 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'voice', 'voice-cloning', 'audio', 'sound', 'speech-synthesis', 'wav2lip',
         'fish-speech', 'chatterbox', 'gpt-sovits', 'music', 'synthesizer', 'dsp', 'podcast', 'transcription'
     }
-    if any(t in t_set for t in speech_topics) or re.search(r'\b(tts|stt|whisper|text-to-speech|speech-to-text|voice cloning|speech synthesis|speech recognition|transcription|audio processing|synthesizer|dsp|voice assistant|audio)\b', text):
+    if any(t in t_set for t in speech_topics) or re.search(r'\b(tts|stt|whisper|text-to-speech|speech-to-text|voice cloning|speech synthesis|speech recognition|transcription|audio processing|synthesizer|dsp|voice assistant|audio|sound)\b', text):
         return 'speech-audio'
 
     # 5. Game Engines, 3D Models & WebGL
     gaming_topics = {
         '3d', 'threejs', 'three.js', 'webgl', 'game-engine', 'godot', 'unity', 'unreal',
         'shaders', 'rendering', 'vulkan', 'opengl', 'react-three-fiber', 'gamedev', 'cad',
-        'text-to-cad', 'graphics', 'mesh', '3d-model', 'blender', 'raytracing', 'canvas-3d'
+        'text-to-cad', 'graphics', 'mesh', '3d-model', 'blender', 'raytracing', 'canvas-3d',
+        'game', 'games', 'gaming'
     }
-    if any(t in t_set for t in gaming_topics) or re.search(r'\b(3d|three\.js|threejs|webgl|game engine|godot|unity|unreal|shaders?|rendering|vulkan|opengl|react-three-fiber|gamedev|cad|3d printing|mesh rendering|computer graphics|blender)\b', text):
+    if any(t in t_set for t in gaming_topics) or re.search(r'\b(3d|three\.js|threejs|webgl|game engine|godot|unity|unreal|shaders?|rendering|vulkan|opengl|react-three-fiber|gamedev|cad|3d printing|mesh rendering|computer graphics|blender|game development)\b', text):
         return 'gaming-graphics'
 
     # 6. Privacy, Adblocking & Anti-Tracking
     privacy_topics = {
         'privacy', 'adblock', 'adblocking', 'debloat', 'anti-tracking', 'dns', 'vpn',
         'wireguard', 'anonymity', 'tor', 'cleanyourtv', 'anti-censorship', 'tracker-blocker',
-        'hosts', 'pi-hole', 'adguard'
+        'hosts', 'pi-hole', 'adguard', 'firewall-rules', 'ad-blocker'
     }
-    if any(t in t_set for t in privacy_topics) or re.search(r'\b(adblock|adblocking|debloat|anti-tracking|privacy|anonymity|pi-hole|adguard|wireguard|vpn|tor network|anti-censorship|tracker block)\b', text):
+    if any(t in t_set for t in privacy_topics) or re.search(r'\b(adblock|adblocking|debloat|anti-tracking|privacy|anonymity|pi-hole|adguard|wireguard|vpn|tor network|anti-censorship|tracker block|ad-blocker)\b', text):
         return 'privacy-adblock'
 
     # 7. Education, Open Knowledge & Books
     edu_topics = {
         'education', 'learning', 'curriculum', 'textbook', 'textbooks', 'tutorial',
         'awesome-list', 'cheat-sheet', 'how-to', 'life-guide', 'howto', 'course',
-        'books', 'papers', 'study', 'knowledge', 'cs-courses', 'freecodecamp'
+        'books', 'papers', 'study', 'knowledge', 'cs-courses', 'freecodecamp',
+        'challenge', 'challenges', 'exercise', 'exercises', 'roadmap', 'cheatsheet',
+        'handbook', 'leetcode', 'interview-prep', 'learning-resources'
     }
-    if any(t in t_set for t in edu_topics) or re.search(r'\b(education|curriculum|tutorial|textbooks?|cheat sheet|awesome list|how to|learning guide|cs courses?|study guide|handbook|freecodecamp|interview preparation)\b', text):
+    if any(t in t_set for t in edu_topics) or re.search(r'\b(education|curriculum|tutorial|textbooks?|cheat sheet|awesome list|how to|learning guide|cs courses?|study guide|handbook|freecodecamp|interview preparation|challenges?|exercises?|roadmap|leetcode)\b', text):
         return 'education-learning'
 
     # 8. Browser Agents & Autonomous Workflows
     auto_topics = {
         'browser-use', 'automation', 'browser-agent', 'headless-browser', 'workflow-automation',
         'task-automation', 'workflow', 'n8n', 'automate', 'rpa', 'bot', 'cron', 'scheduler',
-        'nocode', 'lowcode'
+        'nocode', 'lowcode', 'work-flow', 'pipelines'
     }
-    if any(t in t_set for t in auto_topics) or re.search(r'\b(workflow automation|browser-use|browser agent|task automation|autonomous workflow|automation platform|rpa|automate|automated workflow|scheduled tasks|cron)\b', text):
+    if any(t in t_set for t in auto_topics) or re.search(r'\b(workflow automation|browser-use|browser agent|task automation|autonomous workflow|automation platform|rpa|automate|automated workflow|scheduled tasks|cron|no-code|low-code)\b', text):
         return 'smart-automation'
 
     # 9. LLM Agents & Generative Apps
@@ -214,18 +221,21 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'llm', 'llms', 'agent', 'agents', 'prompt', 'prompts', 'rag', 'langchain', 'llamaindex',
         'ollama', 'claude', 'gpt', 'gpt-4', 'chatgpt', 'crewai', 'mcp', 'deepseek', 'copilot',
         'autonomous-agents', 'reasoning', 'agentic', 'genai', 'openai', 'gemini', 'anthropic',
-        'ai-agent', 'coding-agent', 'ai-agents'
+        'ai-agent', 'coding-agent', 'ai-agents', 'prompt-engineering', 'claude-code', 'codex',
+        'context-engineering', 'agent-memory', 'deepseek-harness', 'mcp-server'
     }
-    if any(t in t_set for t in llm_topics) or re.search(r'\b(llm|llms|agentic|langchain|ollama|deepseek|rag|crewai|chatgpt|gpt|prompts?|reasoning model|coding agent|ai agents?|autonomous agents?|mcp server|retrieval augmented)\b', text):
+    if any(t in t_set for t in llm_topics) or re.search(r'\b(llm|llms|agentic|langchain|ollama|deepseek|rag|crewai|chatgpt|gpt|prompts?|reasoning model|coding agent|ai agents?|autonomous agents?|mcp server|retrieval augmented|claude|gemini|openai|anthropic|context engineering)\b', text):
         return 'llm-agents'
 
     # 10. Cybersecurity & Pentesting
     sec_topics = {
         'cybersecurity', 'security', 'penetration-testing', 'pentest', 'exploit', 'vulnerability',
         'reverse-engineering', 'cryptography', 'malware', 'ctf', 'infosec', 'firewall', 'hacking',
-        'decompiler', 'rea', 'binary-analysis', 'red-team', 'blue-team', 'bugbounty'
+        'decompiler', 'rea', 'binary-analysis', 'red-team', 'blue-team', 'bugbounty',
+        'appsec', 'secrets-scanning', 'git-security', 'devsecops', 'security-audit', 'cve',
+        'auth-bypass', 'zero-trust', 'sast', 'dast', 'trufflehog'
     }
-    if any(t in t_set for t in sec_topics) or re.search(r'\b(cybersecurity|pentest|penetration testing|vulnerability|reverse engineering|malware|decompiler|cryptography|binary analysis|infosec|exploit|bug bounty|red team|security audit)\b', text):
+    if any(t in t_set for t in sec_topics) or re.search(r'\b(cybersecurity|pentest|penetration testing|vulnerability|reverse engineering|malware|decompiler|cryptography|binary analysis|infosec|exploit|bug bounty|red team|security audit|secrets? scanning|appsec|devsecops|cve)\b', text):
         return 'cybersecurity'
 
     # 11. Quant & Data Science
@@ -233,18 +243,19 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'quantitative-finance', 'trading', 'algorithmic-trading', 'crypto', 'cryptocurrency',
         'backtesting', 'finance', 'fintech', 'bitcoin', 'ethereum', 'solana', 'defi',
         'stocks', 'investing', 'quant', 'portfolio', 'orderbook', 'market-data', 'yfinance',
-        'openbb', 'accounting', 'ledger', 'wallet', 'finances'
+        'openbb', 'accounting', 'ledger', 'wallet', 'finances', 'payment', 'payments', 'stripe',
+        'web3', 'blockchain', 'smart-contracts'
     }
-    if any(t in t_set for t in quant_topics) or re.search(r'\b(quantitative finance|algorithmic trading|trading bot|backtest|backtesting|crypto|cryptocurrency|bitcoin|ethereum|stocks?|investing|financial|fintech|quant|portfolio optimization|orderbook|market data|personal finances)\b', text):
+    if any(t in t_set for t in quant_topics) or re.search(r'\b(quantitative finance|algorithmic trading|trading bot|backtest|backtesting|crypto|cryptocurrency|bitcoin|ethereum|stocks?|investing|financial|fintech|quant|portfolio optimization|orderbook|market data|personal finances?|payments?|ledger|blockchain|defi)\b', text):
         return 'quant-datasci'
 
     # 12. Robotics & Hardware
     robot_topics = {
         'robotics', 'robot', 'ros', 'ros2', 'embedded', 'arduino', 'esp32', 'firmware',
         'iot', 'hardware', 'microcontroller', 'drone', 'raspberry-pi', 'stm32', 'circuit',
-        'sensor', 'edge-computing'
+        'sensor', 'edge-computing', 'fpga', 'pcb', 'robotics-framework'
     }
-    if any(t in t_set for t in robot_topics) or re.search(r'\b(robotics?|ros2?|embedded|arduino|esp32|microcontroller|firmware|iot|drone|hardware device|raspberry pi|sensors?)\b', text):
+    if any(t in t_set for t in robot_topics) or re.search(r'\b(robotics?|ros2?|embedded|arduino|esp32|microcontroller|firmware|iot|drone|hardware device|raspberry pi|sensors?|fpga|pcb)\b', text):
         return 'robotics-hardware'
 
     # 13. Data Engineering & Databases
@@ -252,18 +263,23 @@ def assign_category(topics: List[str], description: str, full_name: str = "") ->
         'database', 'databases', 'sql', 'postgresql', 'postgres', 'mysql', 'sqlite', 'duckdb',
         'clickhouse', 'polars', 'pandas', 'spark', 'kafka', 'data-warehouse', 'etl', 'olap',
         'supabase', 'redis', 'vector-database', 'chroma', 'milvus', 'nosql', 'relational-database',
-        'data-pipeline'
+        'data-pipeline', 'key-value', 'kv', 'consensus', 'raft', 'etcd', 'memcached', 'cache',
+        'analytics', 'streaming', 'lakehouse', 'parquet', 'arrow', 'backend', 'pocketbase'
     }
-    if any(t in t_set for t in data_topics) or re.search(r'\b(databases?|postgresql|postgres|mysql|sqlite|duckdb|clickhouse|polars|spark|kafka|data warehouse|etl pipeline|olap|vector database|redis|supabase|stream processing)\b', text):
+    if any(t in t_set for t in data_topics) or re.search(r'\b(databases?|postgresql|postgres|mysql|sqlite|duckdb|clickhouse|polars|spark|kafka|data warehouse|etl pipeline|olap|vector database|redis|supabase|stream processing|key-value|nosql|realtime backend|data pipeline)\b', text):
         return 'data-engineering'
 
     # 14. Infrastructure & DevOps
     infra_topics = {
         'kubernetes', 'k8s', 'docker', 'devops', 'terraform', 'ansible', 'linux', 'cloud-native',
         'serverless', 'ci-cd', 'terminal', 'cli', 'tui', 'zsh', 'bash', 'shell', 'system-design',
-        'proxy', 'networking', 'mesh', 'sysadmin', 'command-line', 'ssh', 'homelab', 'self-hosted'
+        'proxy', 'networking', 'mesh', 'sysadmin', 'command-line', 'ssh', 'homelab', 'self-hosted',
+        'package-manager', 'uv', 'observability', 'monitoring', 'metrics', 'grafana', 'prometheus',
+        'telemetry', 'tracing', 'logging', 'nginx', 'caddy', 'envoy', 'traefik', 'api-gateway',
+        'developer-tools', 'devtools', 'compiler', 'linter', 'formatter', 'debugger',
+        'android', 'macos', 'windows', 'operating-system', 'os'
     }
-    if any(t in t_set for t in infra_topics) or re.search(r'\b(kubernetes|k8s|docker|devops|terraform|ansible|linux|cloud native|serverless|ci\/cd|terminal ui|command line|cli tool|system design|homelab|self-hosted|reverse proxy|networking)\b', text):
+    if any(t in t_set for t in infra_topics) or re.search(r'\b(kubernetes|k8s|docker|devops|terraform|ansible|linux|cloud native|serverless|ci\/cd|terminal ui|command line|cli tool|system design|homelab|self-hosted|reverse proxy|networking|package manager|observability|monitoring|metrics|grafana|prometheus|developer tools?)\b', text):
         return 'infrastructure'
 
     # 15. Web Frameworks
@@ -350,12 +366,12 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
             ))
             repo_id = cursor.lastrowid
 
-        # Insert historical snapshots for sparkline
-        # Check if snapshot exists for today
+        # Insert or update snapshots for sparklines and momentum calculation
         today_date = now_iso[:10]
-        cursor.execute("SELECT id FROM snapshots WHERE repo_id = ? AND timestamp LIKE ?;", (repo_id, f"{today_date}%"))
-        if not cursor.fetchone():
-            # Generate 7-day points
+        cursor.execute("SELECT id, stars FROM snapshots WHERE repo_id = ? AND timestamp LIKE ?;", (repo_id, f"{today_date}%"))
+        row_snap = cursor.fetchone()
+        if not row_snap:
+            # Generate historical trajectory points for new repository
             for i in [7, 5, 4, 3, 2, 1, 0]:
                 snap_time = (datetime.now(timezone.utc) - timedelta(days=i)).isoformat()
                 s_stars = max(1, stars - int(d7d * (i / 7.0))) if i > 0 else stars
@@ -368,6 +384,14 @@ def save_repos_to_database(repos: List[Dict[str, Any]], db_path: str = DB_PATH) 
                     repo_id, snap_time, s_stars, int(s_stars * 0.12), 15,
                     d24h, d7d, d30d
                 ))
+        else:
+            # Update today's snapshot with current star count and latest trajectory surge
+            cursor.execute("""
+                UPDATE snapshots SET
+                    stars = ?, delta_stars_24h = max(delta_stars_24h, ?),
+                    delta_stars_7d = max(delta_stars_7d, ?), delta_stars_30d = max(delta_stars_30d, ?)
+                WHERE id = ?;
+            """, (stars, d24h, d7d, d30d, row_snap[0]))
 
         saved_count += 1
 
@@ -557,13 +581,17 @@ def discover_emerging_repos_via_github_api() -> List[Dict[str, Any]]:
     now = datetime.now(timezone.utc)
     d14 = (now - timedelta(days=14)).strftime("%Y-%m-%d")
     d30 = (now - timedelta(days=30)).strftime("%Y-%m-%d")
+    d45 = (now - timedelta(days=45)).strftime("%Y-%m-%d")
 
     queries = [
         f"created:>{d14} stars:>30",
         f"topic:agent created:>{d30} stars:>10",
         f"mcp created:>{d30} stars:>10",
+        f"deepseek created:>{d30} stars:>10",
         f"rust created:>{d30} stars:>20",
-        f"deepseek created:>{d30} stars:>10"
+        f"topic:security created:>{d45} stars:>15",
+        f"topic:trading created:>{d45} stars:>10",
+        f"crawler created:>{d45} stars:>15"
     ]
 
     emerging_repos = []
@@ -571,6 +599,7 @@ def discover_emerging_repos_via_github_api() -> List[Dict[str, Any]]:
 
     print(f"[Ingestion] Querying GitHub API for emerging repositories across {len(queries)} targeted queries...")
 
+    import time
     for q in queries:
         url = f"https://api.github.com/search/repositories?q={urllib.parse.quote(q)}&sort=stars&order=desc&per_page=25"
         try:
@@ -613,6 +642,7 @@ def discover_emerging_repos_via_github_api() -> List[Dict[str, Any]]:
                         "pushed_at": item.get("pushed_at") or now.isoformat(),
                         "is_emerging": 1
                     })
+            time.sleep(0.8)  # Gentle pacing to ensure zero burst rate-limiting
         except Exception as e:
             print(f"[Ingestion] Error querying GitHub API for '{q}': {e}")
 
