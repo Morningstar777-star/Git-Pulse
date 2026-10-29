@@ -49,7 +49,7 @@
 ## 💡 Why GitPulse Explorer?
 
 <p align="center">
-  <img src="docs/assets/gitpulse_architecture_infographic.svg" alt="Comparative Architecture: Legacy Static GitHub Stars vs GitPulse Bayesian Kinetic Momentum Engine" width="100%" style="max-width: 1040px; border-radius: 12px; margin: 15px 0;" />
+  <img src="docs/assets/gitpulse_architecture_infographic.png" alt="Comparative Analysis: Cognitive Human Search vs Fast Kinetic Discovery (GitPulse Architecture)" width="100%" style="max-width: 1100px; border-radius: 12px; margin: 15px 0; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);" />
 </p>
 
 ### The Developer Problem: Why Traditional GitHub Trending Fails Engineers
