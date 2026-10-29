@@ -1,0 +1,301 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 480" width="100%" height="100%">
+  <defs>
+    <!-- Background gradients -->
+    <radialGradient id="bg-glow" cx="50%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#0a1d37" stop-opacity="0.8" />
+      <stop offset="45%" stop-color="#050e1c" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#020408" stop-opacity="1" />
+    </radialGradient>
+
+    <!-- Grid pattern -->
+    <pattern id="cyber-grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1f3a60" stroke-width="0.75" stroke-opacity="0.25" />
+      <circle cx="40" cy="40" r="1" fill="#38bdf8" fill-opacity="0.3" />
+    </pattern>
+
+    <!-- 3D Letter Facet Gradients -->
+    <!-- Top Face: Highlights (Light cyan-sky) -->
+    <linearGradient id="top-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#bbf2f6" />
+      <stop offset="100%" stop-color="#7dd3fc" />
+    </linearGradient>
+
+    <!-- Front Face: Vibrant electric blue to cyan -->
+    <linearGradient id="front-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8" />
+      <stop offset="50%" stop-color="#0284c7" />
+      <stop offset="100%" stop-color="#0369a1" />
+    </linearGradient>
+
+    <!-- Side Face (Right extrusion): Deep volumetric shading -->
+    <linearGradient id="side-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0369a1" />
+      <stop offset="100%" stop-color="#082f49" />
+    </linearGradient>
+
+    <!-- Glowing Pulse Wave -->
+    <linearGradient id="pulse-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0284c7" stop-opacity="0" />
+      <stop offset="25%" stop-color="#38bdf8" stop-opacity="0.8" />
+      <stop offset="50%" stop-color="#34d399" stop-opacity="1" />
+      <stop offset="75%" stop-color="#38bdf8" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#0284c7" stop-opacity="0" />
+    </linearGradient>
+
+    <!-- Glow filters -->
+    <filter id="neon-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="6" result="blur1" />
+      <feGaussianBlur stdDeviation="15" result="blur2" />
+      <feMerge>
+        <feMergeNode in="blur2" />
+        <feMergeNode in="blur1" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="laser-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Badge Glass Pill Gradients -->
+    <linearGradient id="badge-bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f2642" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#061220" stop-opacity="0.9" />
+    </linearGradient>
+    <linearGradient id="badge-border" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.5" />
+      <stop offset="50%" stop-color="#34d399" stop-opacity="0.3" />
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.5" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background Canvas -->
+  <rect width="1200" height="480" fill="url(#bg-glow)" />
+  <rect width="1200" height="480" fill="url(#cyber-grid)" />
+
+  <!-- Ambient Light Orbs -->
+  <circle cx="600" cy="180" r="280" fill="#0284c7" opacity="0.18" filter="url(#neon-glow)" />
+  <circle cx="360" cy="190" r="180" fill="#38bdf8" opacity="0.12" filter="url(#neon-glow)" />
+  <circle cx="840" cy="190" r="180" fill="#10b981" opacity="0.10" filter="url(#neon-glow)" />
+
+  <!-- Decorative Circuit Rings -->
+  <g opacity="0.25">
+    <circle cx="600" cy="180" r="180" fill="none" stroke="#38bdf8" stroke-width="1" stroke-dasharray="8 6" />
+    <circle cx="600" cy="180" r="210" fill="none" stroke="#0284c7" stroke-width="0.75" stroke-dasharray="3 9" />
+    <circle cx="600" cy="180" r="240" fill="none" stroke="#34d399" stroke-width="0.5" />
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- 3D ISOMETRIC EXTRUDED TYPOGRAPHY: "GITPULSE"                  -->
+  <!-- ============================================================ -->
+  <!-- Each letter is modeled with 3D isometric facets (Front, Top, Side) -->
+  <!-- Base font styling: Heavy Block Isometric Sans                    -->
+  <g transform="translate(100, 70)" id="isometric-logo">
+
+    <!-- 1. LETTER G -->
+    <g transform="translate(0, 0)">
+      <!-- 3D Shadows & Side Extrusions -->
+      <!-- Back depth -->
+      <polygon points="18,-18 108,-18 90,0 0,0" fill="url(#top-grad)" stroke="#034b75" stroke-width="1.5" />
+      <polygon points="108,-18 108,102 90,120 90,0" fill="url(#side-grad)" stroke="#034b75" stroke-width="1.5" />
+      
+      <!-- Front Face G: Outer Box with cutout and crossbar -->
+      <path d="M 0 0 L 90 0 L 90 28 L 30 28 L 30 92 L 62 92 L 62 64 L 46 64 L 46 42 L 90 42 L 90 120 L 0 120 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Top Bevel Highlights -->
+      <polygon points="0,0 18,-18 108,-18 90,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Cutout Top Bevels -->
+      <polygon points="46,42 64,24 108,24 90,42" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <polygon points="62,92 80,74 80,46 62,64" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1" />
+      <!-- Right Side Extrusion Facet -->
+      <polygon points="90,0 108,-18 108,102 90,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="90,42 108,24 108,102 90,120" fill="url(#side-grad)" opacity="0.6" />
+    </g>
+
+    <!-- 2. LETTER I -->
+    <g transform="translate(132, 0)">
+      <!-- Top Bevel -->
+      <polygon points="0,0 18,-18 52,-18 34,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face -->
+      <rect x="0" y="0" width="34" height="120" fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Right Side Extrusion -->
+      <polygon points="34,0 52,-18 52,102 34,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+    </g>
+
+    <!-- 3. LETTER T -->
+    <g transform="translate(208, 0)">
+      <!-- Top Bevel Bar -->
+      <polygon points="0,0 18,-18 106,-18 88,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face: T Bar + Stem -->
+      <path d="M 0 0 L 88 0 L 88 30 L 60 30 L 60 120 L 28 120 L 28 30 L 0 30 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Right Side Extrusions -->
+      <polygon points="88,0 106,-18 106,12 88,30" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="60,30 78,12 78,102 60,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="28,30 46,12 60,12 42,30" fill="url(#top-grad)" opacity="0.7" />
+    </g>
+
+    <!-- EKG PULSE DIVIDER GLOW EMBLEM (Center Node) -->
+    <g transform="translate(322, 10)">
+      <circle cx="20" cy="50" r="12" fill="#0284c7" opacity="0.3" filter="url(#laser-glow)" />
+      <circle cx="20" cy="50" r="6" fill="#34d399" />
+      <circle cx="20" cy="50" r="2.5" fill="#ffffff" />
+    </g>
+
+    <!-- 4. LETTER P -->
+    <g transform="translate(370, 0)">
+      <!-- Top Bevel -->
+      <polygon points="0,0 18,-18 104,-18 86,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face P -->
+      <path d="M 0 0 L 86 0 L 86 70 L 32 70 L 32 120 L 0 120 Z M 32 26 L 56 26 L 56 46 L 32 46 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" fill-rule="evenodd" />
+      <!-- Right Side Extrusions -->
+      <polygon points="86,0 104,-18 104,52 86,70" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="32,70 50,52 50,102 32,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Inner cutout side/top -->
+      <polygon points="32,46 50,28 74,28 56,46" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <polygon points="32,26 50,8 50,28 32,46" fill="url(#side-grad)" opacity="0.6" />
+    </g>
+
+    <!-- 5. LETTER U -->
+    <g transform="translate(496, 0)">
+      <!-- Top Bevel Left & Right Arms -->
+      <polygon points="0,0 18,-18 48,-18 30,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="56,0 74,-18 104,-18 86,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face U -->
+      <path d="M 0 0 L 30 0 L 30 90 L 56 90 L 56 0 L 86 0 L 86 120 L 0 120 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Bottom Inner Cutout Top Bevel -->
+      <polygon points="30,90 48,72 74,72 56,90" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <!-- Right Side Extrusions -->
+      <polygon points="86,0 104,-18 104,102 86,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="30,0 48,-18 48,72 30,90" fill="url(#side-grad)" opacity="0.5" />
+    </g>
+
+    <!-- 6. LETTER L -->
+    <g transform="translate(620, 0)">
+      <!-- Top Bevel -->
+      <polygon points="0,0 18,-18 48,-18 30,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="30,92 48,74 102,74 84,92" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face L -->
+      <path d="M 0 0 L 30 0 L 30 92 L 84 92 L 84 120 L 0 120 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Right Side Extrusions -->
+      <polygon points="30,0 48,-18 48,74 30,92" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="84,92 102,74 102,102 84,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+    </g>
+
+    <!-- 7. LETTER S -->
+    <g transform="translate(738, 0)">
+      <!-- Top Bevel -->
+      <polygon points="0,0 18,-18 104,-18 86,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face S -->
+      <path d="M 0 0 L 86 0 L 86 28 L 30 28 L 30 46 L 86 46 L 86 120 L 0 120 L 0 92 L 56 92 L 56 74 L 0 74 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Intermediate Top Bevels -->
+      <polygon points="0,74 18,56 74,56 56,74" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <polygon points="30,46 48,28 104,28 86,46" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <!-- Right Side Extrusions -->
+      <polygon points="86,0 104,-18 104,10 86,28" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="86,46 104,28 104,102 86,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="0,74 18,56 18,74 0,92" fill="url(#side-grad)" opacity="0.6" />
+    </g>
+
+    <!-- 8. LETTER E -->
+    <g transform="translate(860, 0)">
+      <!-- Top Bevel -->
+      <polygon points="0,0 18,-18 104,-18 86,0" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <!-- Front Face E -->
+      <path d="M 0 0 L 86 0 L 86 28 L 30 28 L 30 46 L 76 46 L 76 74 L 30 74 L 30 92 L 86 92 L 86 120 L 0 120 Z" 
+            fill="url(#front-grad)" stroke="#022e4d" stroke-width="2" />
+      <!-- Inner bars top bevels -->
+      <polygon points="30,46 48,28 94,28 76,46" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <polygon points="30,92 48,74 104,74 86,92" fill="url(#top-grad)" stroke="#022e4d" stroke-width="1" />
+      <!-- Right Side Extrusions -->
+      <polygon points="86,0 104,-18 104,10 86,28" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="76,46 94,28 94,56 76,74" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+      <polygon points="86,92 104,74 104,102 86,120" fill="url(#side-grad)" stroke="#022e4d" stroke-width="1.5" />
+    </g>
+
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- KINETIC LASER EKG PULSE OVERLAY                             -->
+  <!-- ============================================================ -->
+  <g transform="translate(0, 0)">
+    <!-- Underlying Neon Glow Line -->
+    <path d="M 60 215 L 280 215 L 310 180 L 335 255 L 365 145 L 395 240 L 420 195 L 445 215 L 1140 215" 
+          fill="none" stroke="#38bdf8" stroke-width="6" opacity="0.3" filter="url(#laser-glow)" />
+    
+    <!-- Crisp Foreground Laser Pulse -->
+    <path d="M 60 215 L 280 215 L 310 180 L 335 255 L 365 145 L 395 240 L 420 195 L 445 215 L 1140 215" 
+          fill="none" stroke="url(#pulse-grad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
+
+    <!-- Pulse Spark Nodes -->
+    <circle cx="365" cy="145" r="4.5" fill="#ffffff" filter="url(#laser-glow)" />
+    <circle cx="365" cy="145" r="2.5" fill="#34d399" />
+    <circle cx="335" cy="255" r="3.5" fill="#38bdf8" />
+    <circle cx="395" cy="240" r="3.5" fill="#38bdf8" />
+  </g>
+
+  <!-- ============================================================ -->
+  <!-- SUB-HEADLINE & EDITORIAL TYPOGRAPHY                          -->
+  <!-- ============================================================ -->
+  <text x="600" y="295" text-anchor="middle" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Inter, sans-serif" 
+        font-size="14" font-weight="700" letter-spacing="6" fill="#94a3b8">
+    LOCAL &amp; CLOUD GITHUB TREND INTELLIGENCE • BAYESIAN KINETIC RADAR
+  </text>
+
+  <!-- Mission Statement Tagline -->
+  <text x="600" y="330" text-anchor="middle" 
+        font-family="system-ui, -apple-system, 'Segoe UI', Roboto, Inter, sans-serif" 
+        font-size="20" font-weight="500" fill="#f8fafc">
+    Detect breakout open-source technologies <tspan fill="#38bdf8" font-weight="700">7 to 14 days before</tspan> GitHub Trending.
+  </text>
+
+  <!-- ============================================================ -->
+  <!-- CYBER TELEMETRY GLASS PILL BADGES                            -->
+  <!-- ============================================================ -->
+  <g transform="translate(110, 375)">
+    <!-- Pill 1: 0ms Latency -->
+    <g transform="translate(0, 0)">
+      <rect x="0" y="0" width="220" height="42" rx="21" fill="url(#badge-bg)" stroke="url(#badge-border)" stroke-width="1.2" />
+      <circle cx="24" cy="21" r="5" fill="#34d399" filter="url(#laser-glow)" />
+      <text x="38" y="26" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12" font-weight="600" fill="#e2e8f0">
+        ⚡ 0ms Mode Switching
+      </text>
+    </g>
+
+    <!-- Pill 2: Velocity Surges -->
+    <g transform="translate(235, 0)">
+      <rect x="0" y="0" width="235" height="42" rx="21" fill="url(#badge-bg)" stroke="url(#badge-border)" stroke-width="1.2" />
+      <circle cx="24" cy="21" r="5" fill="#38bdf8" filter="url(#laser-glow)" />
+      <text x="38" y="26" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12" font-weight="600" fill="#e2e8f0">
+        ⏱ 24h &amp; 7d Velocity Surge
+      </text>
+    </g>
+
+    <!-- Pill 3: BKM Engine -->
+    <g transform="translate(485, 0)">
+      <rect x="0" y="0" width="245" height="42" rx="21" fill="url(#badge-bg)" stroke="url(#badge-border)" stroke-width="1.2" />
+      <circle cx="24" cy="21" r="5" fill="#a855f7" filter="url(#laser-glow)" />
+      <text x="38" y="26" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12" font-weight="600" fill="#e2e8f0">
+        📡 Bayesian Kinetic Engine
+      </text>
+    </g>
+
+    <!-- Pill 4: Turso Cloud Telemetry -->
+    <g transform="translate(745, 0)">
+      <rect x="0" y="0" width="235" height="42" rx="21" fill="url(#badge-bg)" stroke="url(#badge-border)" stroke-width="1.2" />
+      <circle cx="24" cy="21" r="5" fill="#f59e0b" filter="url(#laser-glow)" />
+      <text x="38" y="26" font-family="'JetBrains Mono', 'Fira Code', monospace" font-size="12" font-weight="600" fill="#e2e8f0">
+        🌐 Real-Time Turso Sync
+      </text>
+    </g>
+  </g>
+</svg>

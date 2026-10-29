@@ -1,7 +1,10 @@
 <div align="center">
 
-# ⚡ GitPulse Explorer
-### *Next-Generation GitHub Trend Intelligence & Momentum Radar*
+<a href="https://my-git-pulse.vercel.app/">
+  <img src="docs/assets/gitpulse_brand_hero.svg" alt="GitPulse Explorer: 3D Bayesian Kinetic Momentum Radar" width="100%" style="max-width: 960px;" />
+</a>
+
+<br />
 
 [![Live Demo](https://img.shields.io/badge/Live%20Demo-my--git--pulse.vercel.app-00E5FF?style=for-the-badge&logo=vercel&logoColor=white)](https://my-git-pulse.vercel.app/)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org)
@@ -44,6 +47,10 @@
 ---
 
 ## 💡 Why GitPulse Explorer?
+
+<p align="center">
+  <img src="docs/assets/gitpulse_architecture_infographic.svg" alt="Comparative Architecture: Legacy Static GitHub Stars vs GitPulse Bayesian Kinetic Momentum Engine" width="100%" style="max-width: 1000px; border-radius: 12px; margin: 15px 0;" />
+</p>
 
 Traditional GitHub trending lists are flawed:
 1. **Stale Giants:** Repositories with 150k+ stars frequently dominate lists despite gaining only a handful of stars per week.

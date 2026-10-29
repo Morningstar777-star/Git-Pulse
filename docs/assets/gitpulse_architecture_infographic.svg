@@ -1,0 +1,426 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="100%" height="100%">
+  <defs>
+    <!-- Background styling -->
+    <radialGradient id="info-bg" cx="50%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#081528" />
+      <stop offset="60%" stop-color="#040a14" />
+      <stop offset="100%" stop-color="#020408" />
+    </radialGradient>
+
+    <!-- Subtle Dot Grid -->
+    <pattern id="info-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1" fill="#1e3a5f" fill-opacity="0.3" />
+    </pattern>
+
+    <!-- Component Fill Gradients -->
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0f223a" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#091524" stop-opacity="0.95" />
+    </linearGradient>
+
+    <linearGradient id="legacy-card" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1520" stop-opacity="0.85" />
+      <stop offset="100%" stop-color="#110c14" stop-opacity="0.95" />
+    </linearGradient>
+
+    <linearGradient id="engine-box" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0c2340" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#061324" stop-opacity="0.95" />
+    </linearGradient>
+
+    <!-- Glow & Shadow Filters -->
+    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <filter id="cyan-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="6" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+
+    <!-- Marker Arrowheads -->
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#38bdf8" />
+    </marker>
+
+    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#34d399" />
+    </marker>
+
+    <marker id="arrow-amber" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f59e0b" />
+    </marker>
+
+    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1 L 8 5 L 0 9 z" fill="#f43f5e" />
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1200" height="620" fill="url(#info-bg)" />
+  <rect width="1200" height="620" fill="url(#info-grid)" />
+
+  <!-- TOP BANNER HEADER -->
+  <g transform="translate(60, 45)">
+    <text x="540" y="0" text-anchor="middle" 
+          font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" 
+          font-size="19" font-weight="800" letter-spacing="1.5" fill="#f8fafc">
+      COMPARATIVE ARCHITECTURE: LEGACY STATIC STARS VS. GITPULSE BKM MOMENTUM
+    </text>
+    <text x="540" y="24" text-anchor="middle" 
+          font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" 
+          font-size="12" font-weight="500" fill="#94a3b8">
+      Why Raw GitHub Star Counts Deceive Developers &amp; How Bayesian Kinetic Modeling Detects Breakouts Early
+    </text>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- LEFT SIDE: LEGACY GITHUB STATIC PARADIGM (THE FLAWED APPROACH) -->
+  <!-- ============================================================== -->
+  <g transform="translate(45, 95)">
+    <!-- Container Box -->
+    <rect x="0" y="0" width="360" height="485" rx="14" fill="url(#legacy-card)" stroke="#e11d48" stroke-width="1.2" stroke-opacity="0.4" />
+
+    <!-- Sub-heading -->
+    <g transform="translate(20, 28)">
+      <rect x="0" y="0" width="8" height="18" rx="2" fill="#f43f5e" />
+      <text x="16" y="15" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#fda4af">
+        Legacy GitHub Vanity Paradigm
+      </text>
+      <text x="0" y="38" font-family="'JetBrains Mono', monospace" font-size="10.5" fill="#94a3b8">
+        Static Cumulative Heuristic (Zero Velocity Differencing)
+      </text>
+    </g>
+
+    <!-- Stagnant Dinosaur Card Mock -->
+    <g transform="translate(20, 85)">
+      <rect x="0" y="0" width="320" height="135" rx="10" fill="#180e1a" stroke="#881337" stroke-width="1" />
+      
+      <!-- Stale Repo Name -->
+      <circle cx="22" cy="24" r="10" fill="#3f121d" />
+      <text x="18" y="28" font-family="monospace" font-size="11" font-weight="bold" fill="#fda4af">🦕</text>
+      <text x="40" y="22" font-family="'JetBrains Mono', monospace" font-size="12" font-weight="bold" fill="#f8fafc">
+        legacy-framework/dinosaur
+      </text>
+      <text x="40" y="37" font-family="sans-serif" font-size="10" fill="#94a3b8">
+        Built 2014 • Last release 2 years ago
+      </text>
+
+      <!-- Deceptive High Stars Badge -->
+      <rect x="210" y="14" width="98" height="24" rx="12" fill="#3f121d" stroke="#f43f5e" stroke-width="0.8" />
+      <text x="259" y="30" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="bold" fill="#f43f5e">
+        ★ 184,200
+      </text>
+
+      <!-- Flatlining Velocity Chart -->
+      <g transform="translate(18, 55)">
+        <text x="0" y="14" font-family="'JetBrains Mono', monospace" font-size="10" fill="#fca5a5">
+          Velocity: +1.8 stars / day (0.0009% growth)
+        </text>
+        <!-- Flat Line -->
+        <path d="M 0 35 L 80 34 L 140 35 L 200 34 L 280 35" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="4 2" />
+        <circle cx="280" cy="35" r="4" fill="#f43f5e" />
+        <!-- Flatline indicator -->
+        <text x="210" y="58" font-family="sans-serif" font-size="9" font-weight="bold" fill="#f87171">
+          ⚠️ VELOCITY DEADLINE
+        </text>
+      </g>
+    </g>
+
+    <!-- Structural Flaw Callouts -->
+    <g transform="translate(20, 240)">
+      <!-- Item 1 -->
+      <g transform="translate(0, 0)">
+        <circle cx="10" cy="10" r="4" fill="#f43f5e" />
+        <text x="24" y="14" font-family="sans-serif" font-size="11.5" font-weight="600" fill="#fecdd3">
+          Cumulative Star Bias
+        </text>
+        <text x="24" y="30" font-family="sans-serif" font-size="10.5" fill="#94a3b8">
+          Rewards 10-year-old repositories over breakthrough active tools.
+        </text>
+      </g>
+
+      <!-- Item 2 -->
+      <g transform="translate(0, 48)">
+        <circle cx="10" cy="10" r="4" fill="#f43f5e" />
+        <text x="24" y="14" font-family="sans-serif" font-size="11.5" font-weight="600" fill="#fecdd3">
+          14-Day Trending Lag
+        </text>
+        <text x="24" y="30" font-family="sans-serif" font-size="10.5" fill="#94a3b8">
+          GitHub Trending surfaces repos only after virality has peaked.
+        </text>
+      </g>
+
+      <!-- Item 3 -->
+      <g transform="translate(0, 96)">
+        <circle cx="10" cy="10" r="4" fill="#f43f5e" />
+        <text x="24" y="14" font-family="sans-serif" font-size="11.5" font-weight="600" fill="#fecdd3">
+          No Temporal Derivatives
+        </text>
+        <text x="24" y="30" font-family="sans-serif" font-size="10.5" fill="#94a3b8">
+          Zero acceleration tracking; cannot distinguish surge from stagnation.
+        </text>
+      </g>
+
+      <!-- Item 4 -->
+      <g transform="translate(0, 144)">
+        <circle cx="10" cy="10" r="4" fill="#f43f5e" />
+        <text x="24" y="14" font-family="sans-serif" font-size="11.5" font-weight="600" fill="#fecdd3">
+          Search Keyword Clutter
+        </text>
+        <text x="24" y="30" font-family="sans-serif" font-size="10.5" fill="#94a3b8">
+          Keyword stuffing in README outranks actual functional libraries.
+        </text>
+      </g>
+    </g>
+
+    <!-- Bottom Verdict -->
+    <g transform="translate(20, 442)">
+      <rect x="0" y="0" width="320" height="28" rx="6" fill="#2a0812" stroke="#e11d48" stroke-width="0.8" />
+      <text x="160" y="18" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#fda4af">
+        Outcome: Developers miss breakout tech for 6+ months.
+      </text>
+    </g>
+  </g>
+
+  <!-- ============================================================== -->
+  <!-- RIGHT SIDE: GITPULSE BKM INFERENCE PIPELINE (THE SOLUTION)     -->
+  <!-- ============================================================== -->
+  <g transform="translate(425, 95)">
+    <!-- Main Pipeline Container -->
+    <rect x="0" y="0" width="730" height="485" rx="14" fill="url(#card-grad)" stroke="#38bdf8" stroke-width="1.2" stroke-opacity="0.4" />
+
+    <!-- Sub-heading -->
+    <g transform="translate(25, 28)">
+      <rect x="0" y="0" width="8" height="18" rx="2" fill="#38bdf8" />
+      <text x="16" y="15" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="700" fill="#e0f2fe">
+        GitPulse Dynamic Vector Engine (Bayesian Kinetic Momentum)
+      </text>
+      <text x="0" y="38" font-family="'JetBrains Mono', monospace" font-size="10.5" fill="#7dd3fc">
+        Multi-Window Temporal Differencing • Non-Linear Novelty • 0ms Edge Filtering
+      </text>
+    </g>
+
+    <!-- PIPELINE STAGES -->
+    <g transform="translate(20, 80)">
+
+      <!-- STAGE 1: RAW INGESTION INPUT -->
+      <g transform="translate(0, 0)">
+        <text x="45" y="15" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#94a3b8">
+          Input Streams
+        </text>
+
+        <rect x="0" y="30" width="90" height="190" rx="8" fill="#081b33" stroke="#0284c7" stroke-width="1.2" />
+        
+        <!-- Stream items -->
+        <g transform="translate(10, 50)">
+          <rect x="0" y="0" width="70" height="32" rx="4" fill="#0c2d54" />
+          <text x="35" y="16" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#7dd3fc">GraphQL</text>
+          <text x="35" y="27" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#94a3b8">Telemetry</text>
+        </g>
+        <g transform="translate(10, 95)">
+          <rect x="0" y="0" width="70" height="32" rx="4" fill="#0c2d54" />
+          <text x="35" y="16" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#7dd3fc">Snapshot</text>
+          <text x="35" y="27" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#94a3b8">Turso DB</text>
+        </g>
+        <g transform="translate(10, 140)">
+          <rect x="0" y="0" width="70" height="32" rx="4" fill="#0c2d54" />
+          <text x="35" y="16" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#7dd3fc">Semantic</text>
+          <text x="35" y="27" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#94a3b8">NL Intent</text>
+        </g>
+
+        <!-- Arrow connecting to Stage 2 -->
+        <path d="M 90 125 L 115 125" fill="none" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-cyan)" />
+      </g>
+
+      <!-- STAGE 2: TEMPORAL ANCHORS (24h, 7d, 30d) -->
+      <g transform="translate(125, 0)">
+        <text x="45" y="15" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#94a3b8">
+          Time Anchors
+        </text>
+
+        <rect x="0" y="30" width="90" height="190" rx="8" fill="#082238" stroke="#38bdf8" stroke-width="1.2" />
+
+        <!-- 24h Window -->
+        <g transform="translate(10, 48)">
+          <rect x="0" y="0" width="70" height="36" rx="5" fill="#0369a1" />
+          <text x="35" y="18" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#ffffff">ΔS_24h</text>
+          <text x="35" y="30" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#bae6fd">Velocity Surge</text>
+        </g>
+        <!-- 7d Window -->
+        <g transform="translate(10, 96)">
+          <rect x="0" y="0" width="70" height="36" rx="5" fill="#0284c7" />
+          <text x="35" y="18" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#ffffff">ΔS_7d</text>
+          <text x="35" y="30" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#bae6fd">Trend Vector</text>
+        </g>
+        <!-- 30d Window -->
+        <g transform="translate(10, 144)">
+          <rect x="0" y="0" width="70" height="36" rx="5" fill="#0369a1" />
+          <text x="35" y="18" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#ffffff">ΔS_30d</text>
+          <text x="35" y="30" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#bae6fd">Macro Cycle</text>
+        </g>
+
+        <!-- Arrow connecting to Stage 3 Engine -->
+        <path d="M 90 125 L 115 125" fill="none" stroke="#38bdf8" stroke-width="2" marker-end="url(#arrow-cyan)" />
+      </g>
+
+      <!-- STAGE 3: BKM CORE INFERENCE TRANSFORMER BOX -->
+      <g transform="translate(250, 0)">
+        <text x="135" y="15" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="bold" fill="#38bdf8">
+          BKM Fused Engine
+        </text>
+
+        <rect x="0" y="30" width="270" height="190" rx="10" fill="url(#engine-box)" stroke="#38bdf8" stroke-width="1.8" filter="url(#soft-glow)" />
+
+        <!-- Sub-block 1: Velocity Scoring -->
+        <g transform="translate(16, 46)">
+          <rect x="0" y="0" width="238" height="36" rx="5" fill="#0f3460" stroke="#38bdf8" stroke-width="0.8" />
+          <text x="14" y="22" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#38bdf8">
+            Velocity Vector (Ṽ)
+          </text>
+          <text x="224" y="22" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="9" fill="#94a3b8">
+            CDF Norm (35%)
+          </text>
+        </g>
+
+        <!-- Sub-block 2: Kinetic Acceleration -->
+        <g transform="translate(16, 90)">
+          <rect x="0" y="0" width="238" height="36" rx="5" fill="#064e3b" stroke="#34d399" stroke-width="0.8" />
+          <text x="14" y="22" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#34d399">
+            Kinetic Acceleration (Ã)
+          </text>
+          <text x="224" y="22" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="9" fill="#94a3b8">
+            (7·Δ24h / Δ7d)-1 (25%)
+          </text>
+        </g>
+
+        <!-- Sub-block 3: Novelty & Scale Dampener -->
+        <g transform="translate(16, 134)">
+          <rect x="0" y="0" width="238" height="36" rx="5" fill="#4a1d96" stroke="#c084fc" stroke-width="0.8" />
+          <text x="14" y="22" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#c084fc">
+            Novelty (N) • Scale Dampener (S)
+          </text>
+          <text x="224" y="22" text-anchor="end" font-family="'JetBrains Mono', monospace" font-size="9" fill="#94a3b8">
+            Log10 Damp (40%)
+          </text>
+        </g>
+
+        <!-- Footer parameters info -->
+        <text x="135" y="202" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="#7dd3fc">
+          Sample: 2,463 Repos • Snapshots: 31,882 • Latency: 0ms
+        </text>
+
+        <!-- Arrow connecting to Logits -->
+        <path d="M 270 125 L 295 125" fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#arrow-green)" />
+      </g>
+
+      <!-- STAGE 4: RANK LOGITS ARRAY -->
+      <g transform="translate(555, 0)">
+        <text x="24" y="15" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#94a3b8">
+          BKM Logits
+        </text>
+
+        <!-- Vertical array box -->
+        <rect x="0" y="30" width="48" height="190" rx="8" fill="#081b33" stroke="#34d399" stroke-width="1.2" />
+
+        <!-- Cells with score color grades -->
+        <rect x="6" y="38" width="36" height="22" rx="3" fill="#10b981" />
+        <text x="24" y="53" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#ffffff">98.4</text>
+
+        <rect x="6" y="66" width="36" height="22" rx="3" fill="#059669" />
+        <text x="24" y="81" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#ffffff">91.2</text>
+
+        <rect x="6" y="94" width="36" height="22" rx="3" fill="#0284c7" />
+        <text x="24" y="109" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#ffffff">86.7</text>
+
+        <rect x="6" y="122" width="36" height="22" rx="3" fill="#0369a1" />
+        <text x="24" y="137" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="#bae6fd">74.1</text>
+
+        <rect x="6" y="150" width="36" height="22" rx="3" fill="#1e293b" />
+        <text x="24" y="165" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" fill="#64748b">45.0</text>
+
+        <text x="24" y="196" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="11" fill="#475569">⋮</text>
+
+        <!-- Arrow connecting to Decision -->
+        <path d="M 48 125 L 75 125" fill="none" stroke="#34d399" stroke-width="2" marker-end="url(#arrow-green)" />
+      </g>
+
+      <!-- STAGE 5: BREAKOUT RADAR ALERT OUTPUT -->
+      <g transform="translate(640, 48)">
+        <text x="35" y="-12" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10.5" font-weight="bold" fill="#34d399">
+          Instant Discovery
+        </text>
+
+        <rect x="-10" y="8" width="90" height="135" rx="8" fill="#062e24" stroke="#10b981" stroke-width="1.5" filter="url(#soft-glow)" />
+
+        <circle cx="35" cy="38" r="14" fill="#10b981" opacity="0.3" filter="url(#cyan-glow)" />
+        <circle cx="35" cy="38" r="8" fill="#34d399" />
+        <text x="35" y="42" text-anchor="middle" font-size="10" font-weight="bold" fill="#ffffff">⚡</text>
+
+        <text x="35" y="70" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="10" font-weight="bold" fill="#ffffff">
+          BREAKOUT
+        </text>
+        <text x="35" y="86" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#34d399">
+          DETECTED
+        </text>
+        
+        <text x="35" y="112" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a7f3d0">
+          +7 to 14 Days
+        </text>
+        <text x="35" y="125" text-anchor="middle" font-family="sans-serif" font-size="8" fill="#a7f3d0">
+          Ahead of Viral Peak
+        </text>
+      </g>
+
+    </g>
+
+    <!-- LIVE TELEMETRY PROOF STRIP (BOTTOM OF CONTAINER) -->
+    <g transform="translate(20, 315)">
+      <rect x="0" y="0" width="690" height="70" rx="8" fill="#081424" stroke="#1e3a5f" stroke-width="1" />
+      
+      <!-- Metric 1: OpenBB -->
+      <g transform="translate(20, 16)">
+        <text x="0" y="14" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="bold" fill="#38bdf8">
+          openbq-org/OpenBB
+        </text>
+        <text x="0" y="32" font-family="sans-serif" font-size="10" fill="#94a3b8">
+          ★ 74.8k • Δ24h: +34 • Score: 62.0
+        </text>
+        <rect x="180" y="6" width="60" height="20" rx="4" fill="#064e3b" />
+        <text x="210" y="20" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#34d399">QUANT #1</text>
+      </g>
+
+      <!-- Metric 2: Superlinked -->
+      <g transform="translate(280, 16)">
+        <text x="0" y="14" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="bold" fill="#34d399">
+          superlinked/superlinked
+        </text>
+        <text x="0" y="32" font-family="sans-serif" font-size="10" fill="#94a3b8">
+          ★ 5.4k • Δ24h: +168 • Score: 91.5
+        </text>
+        <rect x="175" y="6" width="65" height="20" rx="4" fill="#047857" />
+        <text x="207" y="20" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#a7f3d0">SURGE #1</text>
+      </g>
+
+      <!-- Metric 3: Claude SEO -->
+      <g transform="translate(540, 16)">
+        <text x="0" y="14" font-family="'JetBrains Mono', monospace" font-size="11" font-weight="bold" fill="#c084fc">
+          claude-seo
+        </text>
+        <text x="0" y="32" font-family="sans-serif" font-size="10" fill="#94a3b8">
+          ★ 23.8k • Score: 78.8
+        </text>
+        <rect x="95" y="6" width="45" height="20" rx="4" fill="#4c1d95" />
+        <text x="117" y="20" text-anchor="middle" font-family="'JetBrains Mono', monospace" font-size="9" font-weight="bold" fill="#e9d5ff">AGENTS</text>
+      </g>
+    </g>
+
+  </g>
+</svg>
