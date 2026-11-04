@@ -15,6 +15,9 @@ export const Sparkline: React.FC<SparklineProps> = ({
   color = '#38bdf8',
   className = ''
 }) => {
+  const rawId = useId();
+  const gradientId = `spark-grad-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
+
   if (!data || data.length < 2) {
     return <div className="h-8 w-24 bg-white/5 rounded animate-pulse" />;
   }
@@ -37,8 +40,6 @@ export const Sparkline: React.FC<SparklineProps> = ({
 
   const isUpward = data[data.length - 1] >= data[0];
   const strokeColor = color || (isUpward ? '#38bdf8' : '#94a3b8');
-  const rawId = useId();
-  const gradientId = `spark-grad-${rawId.replace(/[^a-zA-Z0-9_-]/g, '')}`;
 
   return (
     <svg

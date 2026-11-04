@@ -94,6 +94,25 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
   const [shortlistSortKey, setShortlistSortKey] = useState<ShortlistSortKey>('per_day');
   const [shortlistSortAsc, setShortlistSortAsc] = useState<boolean>(false);
 
+  // Group repositories into topic sections with O(1) watchlist set lookup & memoization
+  const savedSet = React.useMemo(
+    () => new Set(repositories.filter((r) => r.is_saved).map((r) => r.id)),
+    [repositories]
+  );
+
+  const topicSections = React.useMemo(() => {
+    return topics.map((cat) => {
+      const repos = (cat.top_repositories || []).map((repo) => ({
+        ...repo,
+        is_saved: savedSet.has(repo.id)
+      }));
+      return {
+        category: cat,
+        repositories: repos
+      };
+    });
+  }, [topics, savedSet]);
+
   const handleShortlistSort = (key: ShortlistSortKey) => {
     if (shortlistSortKey === key) {
       setShortlistSortAsc(!shortlistSortAsc);
@@ -501,25 +520,6 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
       </main>
     );
   }
-
-  // Group repositories into topic sections with O(1) watchlist set lookup & memoization
-  const savedSet = React.useMemo(
-    () => new Set(repositories.filter((r) => r.is_saved).map((r) => r.id)),
-    [repositories]
-  );
-
-  const topicSections = React.useMemo(() => {
-    return topics.map((cat) => {
-      const repos = (cat.top_repositories || []).map((repo) => ({
-        ...repo,
-        is_saved: savedSet.has(repo.id)
-      }));
-      return {
-        category: cat,
-        repositories: repos
-      };
-    });
-  }, [topics, savedSet]);
 
   return (
     <main className="flex-1 overflow-y-auto pl-4 lg:pl-6 pr-0 py-6 space-y-8">
