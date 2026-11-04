@@ -95,6 +95,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
   const [shortlistSortAsc, setShortlistSortAsc] = useState<boolean>(false);
 
   // Group repositories into topic sections with O(1) watchlist set lookup & memoization
+  // Unconditionally declared at top level to strictly adhere to React Rules of Hooks
   const savedSet = React.useMemo(
     () => new Set(repositories.filter((r) => r.is_saved).map((r) => r.id)),
     [repositories]
