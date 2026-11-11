@@ -7,14 +7,18 @@ from app.database import get_db_connection
 from app.auth import get_current_user_optional
 from app.models.schemas import TopicCategory, TopicItem
 from app.seed_data import TOPICS_METADATA
-from app.routes.repositories import row_to_repo_dict
+from app.routes.repositories import row_to_repo_dict, build_momentum_candidate_cte, momentum_sort_key
 
 router = APIRouter(prefix="/api/topics", tags=["Topics"])
 
 # In-memory TTL cache for high-speed response
 _TOPICS_CACHE = {}
 _TOPICS_CACHE_TIMESTAMP = {}
-CACHE_TTL_SECONDS = 600  # 10 minutes cache for instant lightning responses
+CACHE_TTL_SECONDS = 120  # 2 minutes cache so scheduled updates reflect quickly
+
+def clear_topics_cache() -> None:
+    _TOPICS_CACHE.clear()
+    _TOPICS_CACHE_TIMESTAMP.clear()
 
 @router.get("", response_model=List[TopicCategory])
 async def get_topics_overview(
@@ -61,19 +65,35 @@ async def get_topics_overview(
     stats_by_cat = {r["category_id"]: r for r in stats_rows}
 
     # 3. High-speed partitioned window query to guarantee balanced repositories across EVERY category
-    order_clause = "ORDER BY stars DESC" if mode == "popularity" else "ORDER BY is_emerging DESC, stars DESC"
-    fetch_buffer = max(25, limit_per_topic + (0 if mode == "popularity" else 5))
-    window_query = f"""
-        SELECT * FROM (
-            SELECT *,
-                   ROW_NUMBER() OVER (
-                       PARTITION BY category_id 
-                       {order_clause}
-                   ) as rn
-            FROM repositories 
-            WHERE category_id IS NOT NULL
-        ) WHERE rn <= ?;
-    """
+    if mode == "popularity":
+        fetch_buffer = max(25, limit_per_topic)
+        window_query = """
+            SELECT * FROM (
+                SELECT *,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY category_id
+                           ORDER BY stars DESC
+                       ) as rn
+                FROM repositories
+                WHERE category_id IS NOT NULL
+            ) WHERE rn <= ?;
+        """
+    else:
+        fetch_buffer = max(35, limit_per_topic + 12)
+        cte_sql, momentum_order = build_momentum_candidate_cte(time_window)
+        window_query = f"""
+            {cte_sql}
+            SELECT * FROM (
+                SELECT r.*,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY r.category_id
+                           ORDER BY {momentum_order}
+                       ) as rn
+                FROM repositories r
+                LEFT JOIN latest_vel lv ON r.id = lv.repo_id
+                WHERE r.category_id IS NOT NULL
+            ) WHERE rn <= ?;
+        """
     all_repos_cursor = await db.execute(window_query, (fetch_buffer,))
     all_repos_rows = await all_repos_cursor.fetchall()
 
@@ -97,7 +117,7 @@ async def get_topics_overview(
             chunk = selected_repo_ids[i:i + chunk_size]
             placeholders = ",".join("?" for _ in chunk)
             snap_cursor = await db.execute(
-                f"SELECT repo_id, stars, delta_stars_24h, delta_stars_7d, delta_stars_30d FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
+                f"SELECT repo_id, timestamp, stars, delta_stars_24h, delta_stars_7d, delta_stars_30d FROM snapshots WHERE repo_id IN ({placeholders}) ORDER BY timestamp ASC;",
                 chunk
             )
             snap_rows = await snap_cursor.fetchall()
@@ -121,11 +141,11 @@ async def get_topics_overview(
             item = row_to_repo_dict(r, snapshots=snaps, is_saved=is_saved)
             cat_items.append(item)
 
-        # Sort based on mode
+        # Sort based on mode and active time window
         if mode == "popularity":
             cat_items.sort(key=lambda x: x["stars"], reverse=True)
         else:
-            cat_items.sort(key=lambda x: (x.get("is_emerging", False), x["momentum_score"], x["growth_7d_pct"]), reverse=True)
+            cat_items.sort(key=lambda x: momentum_sort_key(x, time_window), reverse=True)
 
         top_repos = cat_items[:limit_per_topic]
 

@@ -274,6 +274,7 @@ class TursoClient:
             "CREATE INDEX IF NOT EXISTS idx_turso_repos_lang ON repositories(language);",
             "CREATE INDEX IF NOT EXISTS idx_turso_repos_name ON repositories(name);",
             "CREATE INDEX IF NOT EXISTS idx_turso_snaps_repo ON snapshots(repo_id, timestamp);",
+            "CREATE INDEX IF NOT EXISTS idx_turso_snaps_ts ON snapshots(timestamp DESC, repo_id);",
             "CREATE INDEX IF NOT EXISTS idx_turso_users_email ON users(email);",
             "CREATE INDEX IF NOT EXISTS idx_turso_user_wl ON user_watchlist(user_id, repo_id);",
             "CREATE INDEX IF NOT EXISTS idx_turso_sessions ON sessions(user_id);"

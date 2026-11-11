@@ -29,6 +29,7 @@ interface HeaderProps {
   totalTopicsCount: number;
   systemStatus: SystemStatus | null;
   onTriggerRefresh: () => void;
+  isRefreshing?: boolean;
   user?: User | null;
   onOpenAuthModal?: () => void;
   onSignOut?: () => void;
@@ -50,6 +51,7 @@ export const Header: React.FC<HeaderProps> = ({
   totalTopicsCount,
   systemStatus,
   onTriggerRefresh,
+  isRefreshing,
   user,
   onOpenAuthModal,
   onSignOut
@@ -79,7 +81,7 @@ export const Header: React.FC<HeaderProps> = ({
     if (!iso) return 'Just now';
     try {
       const d = new Date(iso);
-      return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })}, ${d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
     } catch {
       return 'Recently';
     }
@@ -300,13 +302,13 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Live Sync Trigger */}
           <button
             onClick={onTriggerRefresh}
-            disabled={systemStatus?.is_refreshing}
+            disabled={Boolean(isRefreshing || systemStatus?.is_refreshing)}
             className={`shrink-0 p-1.5 rounded-lg bg-slate-100 dark:bg-[#21262d] border border-slate-200 dark:border-transparent text-slate-600 dark:text-slate-400 hover:text-blue-500 transition-all ${
-              systemStatus?.is_refreshing ? 'opacity-50 cursor-not-allowed' : ''
+              isRefreshing || systemStatus?.is_refreshing ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             title={`Last synced: ${formatLastSync(systemStatus?.last_refresh_at)}. Click to sync now.`}
           >
-            <RefreshCw className={`w-4 h-4 ${systemStatus?.is_refreshing ? 'animate-spin text-blue-500' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isRefreshing || systemStatus?.is_refreshing ? 'animate-spin text-blue-500' : ''}`} />
           </button>
 
         </div>

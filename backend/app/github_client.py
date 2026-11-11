@@ -342,10 +342,12 @@ class GitHubIngestionClient:
         error_msg = None
 
         try:
-            # Ingest live trending feeds
+            # Ingest live trending feeds (use fast_mode on serverless Vercel to stay well under 30s timeout)
+            import os
             from app.ingestion import run_gitpulse_crawl
+            is_serverless = bool(os.getenv("VERCEL") or os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
             loop = asyncio.get_event_loop()
-            res = await loop.run_in_executor(None, run_gitpulse_crawl)
+            res = await loop.run_in_executor(None, lambda: run_gitpulse_crawl(fast_mode=is_serverless))
             repos_updated = res.get("repos_synced", 0)
 
             async with aiohttp.ClientSession() as session:

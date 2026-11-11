@@ -18,7 +18,94 @@ router = APIRouter(prefix="/api/repositories", tags=["Repositories"])
 
 _REPOS_CACHE = {}
 _REPOS_CACHE_TIMESTAMP = {}
-CACHE_TTL = 180  # 3 minutes in-memory cache for 0ms filter toggling
+CACHE_TTL = 120  # 2 minutes in-memory cache for snappy switching without stale data
+
+def clear_repositories_cache() -> None:
+    _REPOS_CACHE.clear()
+    _REPOS_CACHE_TIMESTAMP.clear()
+
+def build_momentum_candidate_cte(time_window: str = "7d"):
+    """
+    Build indexed recent-snapshot CTE and freshness-weighted velocity SQL ORDER BY clause
+    so smaller breakout repos aren't starved out by legacy cumulative-star giants.
+    """
+    cte_sql = """
+        WITH recent_snaps AS (
+            SELECT repo_id, delta_stars_24h, delta_stars_7d, delta_stars_30d, timestamp,
+                   ROW_NUMBER() OVER (PARTITION BY repo_id ORDER BY timestamp DESC) AS srn
+            FROM snapshots
+            WHERE timestamp >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-30 days')
+        ),
+        latest_vel AS (
+            SELECT repo_id, delta_stars_24h, delta_stars_7d, delta_stars_30d, timestamp
+            FROM recent_snaps
+            WHERE srn = 1
+        )
+    """
+    if time_window == "24h":
+        vel_expr = "COALESCE(lv.delta_stars_24h, 0) * 1.0"
+    elif time_window == "30d":
+        vel_expr = "COALESCE(lv.delta_stars_30d, 0) / 30.0"
+    else:
+        vel_expr = "COALESCE(lv.delta_stars_7d, 0) / 7.0"
+
+    age_days_expr = "MAX(0.0, julianday('now') - julianday(substr(COALESCE(lv.timestamp, r.last_crawled_at, '2020-01-01'), 1, 19)))"
+    decay_expr = (
+        f"CASE WHEN {age_days_expr} <= 2.5 THEN 1.0 "
+        f"WHEN {age_days_expr} <= 5.0 THEN 0.45 "
+        f"WHEN {age_days_expr} <= 10.0 THEN 0.15 "
+        f"ELSE 0.03 END"
+    )
+    novelty_expr = (
+        "CASE WHEN r.created_at >= strftime('%Y-%m-%dT%H:%M:%SZ', 'now', '-60 days') THEN 1.5 "
+        "WHEN r.is_emerging = 1 THEN 1.25 ELSE 1.0 END"
+    )
+    order_expr = (
+        f"(({vel_expr} * ({decay_expr}) * ({novelty_expr})) / (400.0 + r.stars * 0.03)) DESC, "
+        "r.last_crawled_at DESC, r.stars DESC"
+    )
+    return cte_sql, order_expr
+
+def momentum_sort_key(item: dict, time_window: str = "7d") -> tuple:
+    """Rank repositories by calibrated BKM momentum blended with the active timeframe surge."""
+    if time_window == "24h":
+        tw_delta = item.get("recent_growth_24h", 0)
+        tw_pct = item.get("growth_1d_pct") or 0.0
+    elif time_window == "30d":
+        tw_delta = item.get("recent_growth_30d", 0)
+        tw_pct = item.get("growth_30d_pct") or 0.0
+    else:
+        tw_delta = item.get("recent_growth_7d", 0)
+        tw_pct = item.get("growth_7d_pct") or 0.0
+
+    m_score = item.get("momentum_score", 0.0)
+    window_boost = math.log10(1.0 + max(0.0, float(tw_delta))) * 4.0 + min(15.0, math.log1p(max(0.0, float(tw_pct))) * 3.0)
+    blended = round(m_score * 0.85 + window_boost, 3)
+    return (blended, m_score, tw_delta)
+
+def _calc_freshness_decay(snap_or_row) -> float:
+    """Decay stale snapshot velocity smoothly if not observed in recent crawls (>2.5d)."""
+    ts_str = None
+    try:
+        ts_str = snap_or_row["timestamp"]
+    except Exception:
+        try:
+            ts_str = snap_or_row["last_crawled_at"]
+        except Exception:
+            ts_str = None
+    if not ts_str:
+        return 1.0
+    try:
+        from datetime import datetime, timezone
+        dt = datetime.fromisoformat(str(ts_str).replace("Z", "+00:00"))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        age_days = max(0.0, (datetime.now(timezone.utc) - dt).total_seconds() / 86400.0)
+        if age_days <= 2.5:
+            return 1.0
+        return max(0.02, 0.5 ** ((age_days - 2.5) / 2.0))
+    except Exception:
+        return 1.0
 
 def row_to_repo_dict(row, snapshots=None, is_saved=False) -> dict:
     topics = []
@@ -28,23 +115,31 @@ def row_to_repo_dict(row, snapshots=None, is_saved=False) -> dict:
         except Exception:
             topics = [t.strip() for t in row["topics"].split(",") if t.strip()]
 
-    # Extract growth from snapshots or fallback
+    # Extract growth from snapshots (applying freshness decay if stale) or conservative fallback
     recent_24h = 0
     recent_7d = 0
     recent_30d = 0
     sparkline = []
 
     if snapshots:
-        recent_24h = int(snapshots[-1]["delta_stars_24h"]) if snapshots else 0
-        recent_7d = int(snapshots[-1]["delta_stars_7d"]) if snapshots else 0
-        recent_30d = int(snapshots[-1]["delta_stars_30d"]) if snapshots else 0
+        latest = snapshots[-1]
+        decay = _calc_freshness_decay(latest)
+        recent_24h = int(float(latest["delta_stars_24h"] or 0) * decay)
+        recent_7d = max(recent_24h, int(float(latest["delta_stars_7d"] or 0) * min(1.0, decay * 1.4)))
+        recent_30d = max(recent_7d, int(float(latest["delta_stars_30d"] or 0) * min(1.0, decay * 1.8)))
         sparkline = [int(s["stars"]) for s in snapshots]
     else:
         stars_val = max(1, row["stars"])
-        recent_24h = max(1, int(stars_val * 0.005))
-        recent_7d = max(5, int(stars_val * 0.025))
-        recent_30d = max(20, int(stars_val * 0.08))
-        sparkline = [int(stars_val * 0.95), int(stars_val * 0.97), int(stars_val * 0.98), stars_val]
+        decay = _calc_freshness_decay(row)
+        if decay >= 0.8:
+            recent_24h = min(25, max(1, int(stars_val * 0.001)))
+            recent_7d = min(150, max(3, int(stars_val * 0.005)))
+            recent_30d = min(500, max(10, int(stars_val * 0.015)))
+        else:
+            recent_24h = 0
+            recent_7d = 0
+            recent_30d = 0
+        sparkline = [int(stars_val * 0.96), int(stars_val * 0.98), int(stars_val * 0.99), stars_val]
 
     stars = max(1, row["stars"])
     # 1D percentage (growth relative to prior stars)
@@ -176,27 +271,27 @@ async def list_repositories(
         saved_ids = {r[0] for r in saved_rows}
 
     # Base query
-    query = "SELECT * FROM repositories WHERE 1=1"
+    where_clauses = ["1=1"]
     params = []
 
     if category_id:
-        query += " AND category_id = ?"
+        where_clauses.append("category_id = ?")
         params.append(category_id)
 
     if topic:
-        query += " AND (LOWER(topics) LIKE ?)"
+        where_clauses.append("(LOWER(topics) LIKE ?)")
         params.append(f"%{topic.lower()}%")
 
     if language:
-        query += " AND LOWER(language) = LOWER(?)"
+        where_clauses.append("LOWER(language) = LOWER(?)")
         params.append(language)
 
     if min_stars is not None:
-        query += " AND stars >= ?"
+        where_clauses.append("stars >= ?")
         params.append(min_stars)
 
     if is_emerging is not None:
-        query += " AND is_emerging = ?"
+        where_clauses.append("is_emerging = ?")
         params.append(1 if is_emerging else 0)
 
     intent = None
@@ -224,14 +319,20 @@ async def list_repositories(
             params.append(f"%{intent['clean_query'].lower()}%")
 
         if clause_parts:
-            query += " AND (" + " OR ".join(clause_parts) + ")"
-        query += " LIMIT 150"
+            where_clauses.append("(" + " OR ".join(clause_parts) + ")")
+        query = f"SELECT * FROM repositories WHERE {' AND '.join(where_clauses)} LIMIT 150"
+    elif mode == "popularity" or sort_by in ("stars", "stars_count", "forks", "forks_count"):
+        order_col = "forks DESC" if sort_by in ("forks", "forks_count") else "stars DESC"
+        query = f"SELECT * FROM repositories WHERE {' AND '.join(where_clauses)} ORDER BY {order_col} LIMIT 250"
     else:
-        # Optimization: when browsing (no search term), avoid scanning the whole table over HTTP
-        if mode == "popularity":
-            query += " ORDER BY stars DESC LIMIT 200"
-        else:
-            query += " ORDER BY is_emerging DESC, stars DESC LIMIT 200"
+        cte_sql, momentum_order = build_momentum_candidate_cte(time_window)
+        query = (
+            f"{cte_sql} "
+            f"SELECT r.* FROM repositories r "
+            f"LEFT JOIN latest_vel lv ON r.id = lv.repo_id "
+            f"WHERE {' AND '.join(where_clauses)} "
+            f"ORDER BY {momentum_order} LIMIT 250"
+        )
 
     cursor = await db.execute(query, params)
     rows = await cursor.fetchall()
@@ -321,14 +422,8 @@ async def list_repositories(
 
                 items.sort(key=calc_popularity_score, reverse=True)
             else:
-                # Bayesian Kinetic Momentum (BKM) Engine: timeframe-responsive velocity & growth %
-                if time_window == "24h":
-                    items.sort(key=lambda x: (x.get("growth_1d_pct") or 0.0, x.get("recent_growth_24h", 0), x.get("momentum_score", 0.0)), reverse=True)
-                elif time_window == "30d":
-                    items.sort(key=lambda x: ((x.get("growth_30d_pct") or 0.0), x.get("recent_growth_30d", 0), x.get("momentum_score", 0.0)), reverse=True)
-                else:
-                    # 7d default: 7-day velocity surge and relative breakout %
-                    items.sort(key=lambda x: (x.get("growth_7d_pct") or 0.0, x.get("recent_growth_7d", 0), x.get("momentum_score", 0.0)), reverse=True)
+                # Bayesian Kinetic Momentum (BKM) Engine: timeframe-responsive velocity & calibrated surge
+                items.sort(key=lambda x: momentum_sort_key(x, time_window), reverse=True)
 
     # Assign momentum rank
     for idx, item in enumerate(items):

@@ -16,7 +16,7 @@ import {
   ArrowUp,
   ArrowDown
 } from 'lucide-react';
-import { Repository, TopicCategory, SortMode } from '../types';
+import { Repository, TopicCategory, SortMode, TimeWindow } from '../types';
 import { RepoAvatar } from './RepoAvatar';
 
 interface TopicExplorerProps {
@@ -35,6 +35,7 @@ interface TopicExplorerProps {
   hasMore: boolean;
   isLoading: boolean;
   sortMode: SortMode;
+  timeWindow?: TimeWindow;
 }
 
 function getAvatarColor(name: string): string {
@@ -88,7 +89,8 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
   onLoadMore,
   hasMore,
   isLoading,
-  sortMode
+  sortMode,
+  timeWindow = '7d'
 }) => {
   // Shortlist column sorting state
   const [shortlistSortKey, setShortlistSortKey] = useState<ShortlistSortKey>('per_day');
@@ -419,6 +421,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
                 key={repo.id}
                 repo={repo}
                 rank={idx + 1}
+                timeWindow={timeWindow}
                 onSelectRepository={onSelectRepository}
                 onToggleWatchlist={onToggleWatchlist}
                 onSelectTopic={onSelectTopic}
@@ -494,6 +497,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
               key={repo.id}
               repo={repo}
               rank={idx + 1}
+              timeWindow={timeWindow}
               onSelectRepository={onSelectRepository}
               onToggleWatchlist={onToggleWatchlist}
               onSelectTopic={onSelectTopic}
@@ -534,6 +538,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
             key={category.id}
             category={category}
             repositories={sectionRepos}
+            timeWindow={timeWindow}
             onSelectRepository={onSelectRepository}
             onToggleWatchlist={onToggleWatchlist}
             onSelectTopic={onSelectTopic}
@@ -556,11 +561,12 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-          {repositories.slice(0, 30).map((repo, idx) => (
+          {repositories.map((repo, idx) => (
             <CompactCard
               key={repo.id}
               repo={repo}
               rank={idx + 1}
+              timeWindow={timeWindow}
               onSelectRepository={onSelectRepository}
               onToggleWatchlist={onToggleWatchlist}
               onSelectTopic={onSelectTopic}
@@ -596,6 +602,7 @@ export const TopicExplorer: React.FC<TopicExplorerProps> = ({
 interface TopicScrollSectionProps {
   category: TopicCategory;
   repositories: Repository[];
+  timeWindow?: TimeWindow;
   onSelectRepository: (repo: Repository) => void;
   onToggleWatchlist: (repoId: number) => void;
   onSelectTopic: (topic: string) => void;
@@ -604,6 +611,7 @@ interface TopicScrollSectionProps {
 const TopicScrollSection: React.FC<TopicScrollSectionProps> = React.memo(({
   category,
   repositories,
+  timeWindow = '7d',
   onSelectRepository,
   onToggleWatchlist,
   onSelectTopic
@@ -664,6 +672,7 @@ const TopicScrollSection: React.FC<TopicScrollSectionProps> = React.memo(({
             <CompactCard
               repo={repo}
               rank={idx + 1}
+              timeWindow={timeWindow}
               onSelectRepository={onSelectRepository}
               onToggleWatchlist={onToggleWatchlist}
               onSelectTopic={onSelectTopic}
@@ -681,6 +690,7 @@ const TopicScrollSection: React.FC<TopicScrollSectionProps> = React.memo(({
 interface CompactCardProps {
   repo: Repository;
   rank: number;
+  timeWindow?: TimeWindow;
   onSelectRepository: (repo: Repository) => void;
   onToggleWatchlist: (repoId: number) => void;
   onSelectTopic: (topic: string) => void;
@@ -689,6 +699,7 @@ interface CompactCardProps {
 const CompactCard: React.FC<CompactCardProps> = React.memo(({
   repo,
   rank,
+  timeWindow = '7d',
   onSelectRepository,
   onToggleWatchlist,
   onSelectTopic
@@ -790,7 +801,11 @@ const CompactCard: React.FC<CompactCardProps> = React.memo(({
         <div className="flex items-center justify-between text-[11px] font-mono text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-100 dark:border-[#21262d]">
           <div className="flex items-center gap-2">
             <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-              +{repo.growth_1d_pct ?? 0.5}% 1d
+              {timeWindow === '24h'
+                ? `+${repo.growth_1d_pct ?? 0}% 1d`
+                : timeWindow === '30d'
+                ? `+${repo.growth_30d_pct ?? repo.growth_7d_pct ?? 0}% 30d`
+                : `+${repo.growth_7d_pct ?? repo.growth_1d_pct ?? 0}% 7d`}
             </span>
             <span>•</span>
             <span className="text-slate-800 dark:text-slate-200 font-bold">

@@ -57,6 +57,7 @@ export const App: React.FC = () => {
   const [isTopicsModalOpen, setIsTopicsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingRadar, setIsLoadingRadar] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // In-memory cache for instantaneous mode & timeframe switching (0ms latency)
   const topicsCacheRef = React.useRef<Record<string, TopicCategory[]>>({});
@@ -301,16 +302,25 @@ export const App: React.FC = () => {
 
   // Manual Trigger Refresh
   const handleTriggerRefresh = async () => {
+    if (isRefreshing) return;
+    setIsRefreshing(true);
     try {
       await triggerRefresh();
+      topicsCacheRef.current = {};
+      reposCacheRef.current = {};
       const updatedStatus = await fetchSystemStatus();
       setSystemStatus(updatedStatus);
-      setTimeout(() => {
-        loadRepositories(1, false);
-        loadRadarItems(1, false);
-      }, 1500);
+      setRepoPage(1);
+      setRadarPage(1);
+      await Promise.all([
+        loadTopics(mode, timeWindow),
+        loadRepositories(1, false),
+        loadRadarItems(1, false)
+      ]);
     } catch (err) {
       console.error("Refresh trigger error:", err);
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -341,6 +351,7 @@ export const App: React.FC = () => {
         totalTopicsCount={systemStatus?.total_topics || 904}
         systemStatus={systemStatus}
         onTriggerRefresh={handleTriggerRefresh}
+        isRefreshing={isRefreshing}
         user={user}
         onOpenAuthModal={() => {
           setAuthModalReason(null);
@@ -375,6 +386,7 @@ export const App: React.FC = () => {
           hasMore={hasMoreRepos}
           isLoading={isLoading}
           sortMode={mode}
+          timeWindow={timeWindow}
         />
 
         {/* Right Sidebar: Momentum Radar (Placed on Right Side) */}
@@ -382,6 +394,7 @@ export const App: React.FC = () => {
           <SidebarRadar
             repositories={radarRepositories}
             timeWindow={timeWindow}
+            lastRefreshAt={systemStatus?.last_refresh_at}
             onSelectRepository={(repo) => setSelectedRepository(repo)}
             onToggleWatchlist={handleToggleWatchlist}
             onSelectTopic={(topic) => {

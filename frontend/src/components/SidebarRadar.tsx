@@ -16,6 +16,7 @@ import { RepoAvatar } from './RepoAvatar';
 interface SidebarRadarProps {
   repositories: Repository[];
   timeWindow: TimeWindow;
+  lastRefreshAt?: string | null;
   onSelectRepository: (repo: Repository) => void;
   onToggleWatchlist: (repoId: number) => void;
   onSelectTopic: (topic: string) => void;
@@ -61,9 +62,26 @@ function decodeHtml(text?: string | null): string {
 
 type RadarSortCol = 'stars' | '1d' | '7d' | '30d' | 'per_day';
 
+function formatSyncTimestamp(iso?: string | null): string {
+  if (!iso) return 'Live Stream';
+  try {
+    const dt = new Date(iso);
+    if (isNaN(dt.getTime())) return 'Live Stream';
+    const diffMin = Math.max(0, Math.round((Date.now() - dt.getTime()) / 60000));
+    if (diffMin < 2) return 'Synced just now';
+    if (diffMin < 60) return `Synced ${diffMin}m ago`;
+    const diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return `Synced ${diffHr}h ago`;
+    return `Synced ${dt.toLocaleDateString([], { month: 'short', day: 'numeric' })}`;
+  } catch {
+    return 'Live Stream';
+  }
+}
+
 export const SidebarRadar: React.FC<SidebarRadarProps> = ({
   repositories,
   timeWindow,
+  lastRefreshAt,
   onSelectRepository,
   onToggleWatchlist,
   onSelectTopic,
@@ -71,16 +89,13 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
   hasMore,
   isLoading
 }) => {
-  const [sortCol, setSortCol] = useState<RadarSortCol>(
-    timeWindow === '24h' ? '1d' : timeWindow === '30d' ? '30d' : '7d'
-  );
+  // Default null keeps intelligent backend BKM ranking until the user clicks a column override
+  const [sortCol, setSortCol] = useState<RadarSortCol | null>(null);
   const [sortAsc, setSortAsc] = useState<boolean>(false);
 
-  // Sync sorting column whenever the time window changes (24h -> 1d, 7d -> 7d, 30d -> 30d)
+  // Reset manual column sort override when global timeWindow changes so BKM re-ranks cleanly
   React.useEffect(() => {
-    if (timeWindow === '24h') setSortCol('1d');
-    else if (timeWindow === '30d') setSortCol('30d');
-    else setSortCol('7d');
+    setSortCol(null);
     setSortAsc(false);
   }, [timeWindow]);
 
@@ -94,6 +109,7 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
   };
 
   const sortedRepos = React.useMemo(() => {
+    if (!sortCol) return repositories;
     return [...repositories].sort((a, b) => {
       let diff = 0;
       if (sortCol === 'stars') {
@@ -125,16 +141,20 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
       
       {/* Header section matching reference image */}
       <div className="p-4 border-b border-slate-200 dark:border-[#30363d] space-y-1">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
             <span>Highest momentum</span>
           </h2>
-          <span className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-medium">
-            Live Stream
+          <span
+            className="text-[11px] font-mono text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5"
+            title={lastRefreshAt ? `Last database sync: ${new Date(lastRefreshAt).toLocaleString()}` : 'Live Stream'}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <span>{formatSyncTimestamp(lastRefreshAt)}</span>
           </span>
         </div>
         <p className="text-xs text-slate-500 dark:text-slate-400 font-sans">
-          A selection of {repositories.length}+ repositories. Ranked by daily velocity.
+          A selection of {repositories.length}+ repositories. Ranked by calibrated {timeWindow} momentum.
         </p>
 
         {/* Column Headers with Interactive Sorting */}
@@ -169,7 +189,7 @@ export const SidebarRadar: React.FC<SidebarRadarProps> = ({
               onClick={() => handleSortClick('per_day')}
               className={`w-14 text-right hover:text-slate-900 dark:hover:text-white transition-colors ${sortCol === 'per_day' ? 'text-blue-500 font-bold' : 'text-slate-700 dark:text-slate-200'}`}
             >
-              PER DAY {renderSortIndicator('per_day') || '▼'}
+              PER DAY {renderSortIndicator('per_day')}
             </button>
           </div>
         </div>

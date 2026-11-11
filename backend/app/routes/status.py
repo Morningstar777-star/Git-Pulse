@@ -66,12 +66,19 @@ async def get_system_status(db=Depends(get_db_connection)):
 
 @router.post("/refresh", response_model=dict)
 async def trigger_manual_refresh():
-    """Manually initiate a GitHub trend sync."""
+    """Manually initiate a GitHub trend sync and invalidate route caches."""
     if github_client.is_running:
         return {"status": "ALREADY_IN_PROGRESS", "message": "Crawler is already active."}
     
-    # Run in background via scheduler trigger
+    # Run sync via scheduler trigger, then clear stale API caches
     res = await scheduler.trigger_now()
+    try:
+        from app.routes.topics import clear_topics_cache
+        from app.routes.repositories import clear_repositories_cache
+        clear_topics_cache()
+        clear_repositories_cache()
+    except Exception:
+        pass
     return res
 
 @router.post("/algorithm", response_model=dict)
